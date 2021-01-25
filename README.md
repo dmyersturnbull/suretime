@@ -68,7 +68,7 @@ print(interval.delta_calendar_time)           # .............. | Simple end - st
 print(interval.exact_duration_str)            # .............. | days:HH:mm:ss.millis.micros.nanos
 ```
 
-Licensed under the terms of the [Apache License 2.0](https://spdx.org/licenses/agpl3.html).
+Licensed under the terms of the [Apache License 2.0](https://spdx.org/licenses/Apache-2.0.html).
 [New issues](https://github.com/dmyersturnbull/ensuretimezone/issues) and pull requests are welcome.
 Please refer to the [contributing guide](https://github.com/dmyersturnbull/ensuretimezone/blob/main/CONTRIBUTING.md)
 and [security policy](https://github.com/dmyersturnbull/ensuretimezone/blob/main/SECURITY.md).
