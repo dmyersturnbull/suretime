@@ -18,9 +18,11 @@ Downloads and caches an up-to-date timezone name map if necessary.
 You can map between zone names and find your local IANA zone.
 Timezone-resolved datetimes and intervals know both real and calendar times, correctly representing
 the ground truth even if a timezone shift occurs between events – such as from a daylight savings change
-or user boarding a flight. 
+or user boarding a flight.
+Note that there is no 1-1 mapping between Windows and IANA timezones.
+There are several other limitations and [known issues](https://github.com/dmyersturnbull/suretime/issues).
 
-To install: `pip install suretime`. For platform independence, also install `tzdata==2020.5`.
+To install: `pip install suretime`. For platform independence, also install `tzdata==2021.1`.
 A few examples:
 
 ```python
