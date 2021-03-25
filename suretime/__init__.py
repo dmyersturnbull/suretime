@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 or implied. See the License for the specific language governing
 permissions and limitations under the License.
 
-Project metadata for ensuretimezone.
+Project metadata for suretime.
 """
 
 from zoneinfo import ZoneInfo
@@ -24,9 +24,9 @@ from pathlib import Path
 from typing import Optional
 
 from _setup import logger
-from ensuretimezone._mapping import TimezoneMap
-from ensuretimezone._cache import TimezoneMapBackend, TimezoneMapFilesysCache
-from ensuretimezone._model import TaggedDatetime, TaggedInterval
+from suretime._mapping import TimezoneMap
+from suretime._cache import TimezoneMapBackend, TimezoneMapFilesysCache
+from suretime._model import TaggedDatetime, TaggedInterval
 
 
 pkg = Path(__file__).absolute().parent.name
@@ -58,5 +58,15 @@ if __name__ == "__main__":  # pragma: no cover
         print(f"Unknown project info for {pkg}")
 
 
-__all__ = ["tz_map", "datetime", "timedelta", "timezone", "ZoneInfo", "TimezoneMap", "TimezoneMapBackend", "TimezoneMapFilesysCache", "TaggedDatetime",
-           "TaggedInterval"]
+__all__ = [
+    "tz_map",
+    "datetime",
+    "timedelta",
+    "timezone",
+    "ZoneInfo",
+    "TimezoneMap",
+    "TimezoneMapBackend",
+    "TimezoneMapFilesysCache",
+    "TaggedDatetime",
+    "TaggedInterval",
+]

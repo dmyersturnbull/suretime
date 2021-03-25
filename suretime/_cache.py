@@ -27,9 +27,9 @@ from urllib.request import urlopen
 from typing import Mapping, Optional, FrozenSet, Sequence, Union
 from zoneinfo import ZoneInfo, available_timezones
 
-from ensuretimezone._model import TzMapType, TzDictType
+from suretime._model import TzMapType, TzDictType
 
-logger = logging.getLogger("ensuretimezone")
+logger = logging.getLogger("suretime")
 
 try:
     import diffusedxml.ElementTree as Xml
@@ -42,6 +42,7 @@ except ImportError:
 cldr_github_url = (
     "https://raw.githubusercontent.com/unicode-org/cldr/master/common/supplemental/windowsZones.xml"
 )
+
 
 class TzMapCacheEncoder(json.JSONEncoder):
     def default(self, obj):

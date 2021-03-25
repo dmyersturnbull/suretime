@@ -24,15 +24,14 @@ from pathlib import Path
 from typing import Optional, FrozenSet, KeysView
 from zoneinfo import ZoneInfo
 
-from ensuretimezone._model import TaggedDatetime, TaggedInterval
-from ensuretimezone._cache import TimezoneMapFilesysCache, TimezoneMapBackend
+from suretime._model import TaggedDatetime, TaggedInterval
+from suretime._cache import TimezoneMapFilesysCache, TimezoneMapBackend
 
-logger = logging.getLogger("ensuretimezone")
+logger = logging.getLogger("suretime")
 empty_frozenset = frozenset([])
 
 
 class TimezoneMap:
-
     @classmethod
     def cached(
         cls, path: Path = Path.home() / ".timezone-map.json", expiration_mins: int = 43830

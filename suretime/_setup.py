@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 or implied. See the License for the specific language governing
 permissions and limitations under the License.
 
-Code that performs initialization for ensuretimezone.
+Code that performs initialization for suretime.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from importlib.metadata import metadata as load_metadata
 from importlib.metadata import PackageNotFoundError
 from zoneinfo import ZoneInfo
 
-logger = logging.getLogger("ensuretimezone")
+logger = logging.getLogger("suretime")
 
 
 if os.name == "nt":

@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 or implied. See the License for the specific language governing
 permissions and limitations under the License.
 
-Model and utility classes for ensuretimezone.
+Model and utility classes for suretime.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from typing import Mapping, FrozenSet, Dict, Union
 from zoneinfo import ZoneInfo
 
 
-logger = logging.getLogger("ensuretimezone")
+logger = logging.getLogger("suretime")
 
 
 TzMapType = Mapping[str, Mapping[str, FrozenSet[ZoneInfo]]]
