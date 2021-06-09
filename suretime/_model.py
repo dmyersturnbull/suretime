@@ -32,6 +32,36 @@ TzMapType = Mapping[str, Mapping[str, FrozenSet[ZoneInfo]]]
 TzDictType = Dict[str, Dict[str, FrozenSet[ZoneInfo]]]
 
 
+class CannotMapTzError(Exception):
+    """
+    Raised whenever a timezone name could not be mapped to an IANA zone.
+    """
+
+
+class MappedTzNotUniqueError(CannotMapTzError):
+    """
+    Raised when there is more than 1 IANA zone for a zone.
+    """
+
+
+class MappedTzNotFoundError(CannotMapTzError):
+    """
+    Raised when there were no IANA zones matching a zone.
+    """
+
+
+class DatetimeHasZoneError(ValueError):
+    """
+    Raised when a zone is unexpectedly present in a datetime.
+    """
+
+
+class DatetimeMissingZoneError(ValueError):
+    """
+    Raised when a datetime lacks a required zone.
+    """
+
+
 @dataclass(frozen=True, repr=True, order=True)
 class GenericTimezone:
     """
@@ -60,7 +90,7 @@ class GenericTimezone:
 
 
 @dataclass(frozen=True, repr=True, order=True)
-class PreciseTimezone:
+class ExactTimezone:
     """
     A timezone that matches a single IANA ZoneInfo, with info about the source zone.
 
@@ -196,5 +226,10 @@ __all__ = [
     "TzMapType",
     "TzDictType",
     "GenericTimezone",
-    "PreciseTimezone",
+    "ExactTimezone",
+    "CannotMapTzError",
+    "MappedTzNotFoundError",
+    "MappedTzNotUniqueError",
+    "DatetimeHasZoneError",
+    "DatetimeMissingZoneError",
 ]
