@@ -31,13 +31,7 @@ from suretime._model import TzMapType, TzDictType
 
 logger = logging.getLogger("suretime")
 
-try:
-    import diffusedxml.ElementTree as Xml
-
-    logger.info("Using diffusedxml.")
-except ImportError:
-    logger.info("diffusedxml not found. Falling back to built-in xml.etree, which is insecure.")
-    import xml.etree.ElementTree as Xml
+import defusedxml.ElementTree as Xml
 
 cldr_github_url = (
     "https://raw.githubusercontent.com/unicode-org/cldr/master/common/supplemental/windowsZones.xml"
@@ -137,13 +131,8 @@ class TimezoneMapFilesysCache(TimezoneMapBackend):
         return mp
 
     def _download(self) -> str:
-        is_https = str(self.source_xml).startswith("https://")
-        # noinspection HttpUrlsUsage
-        is_http = str(self.source_xml).startswith("http://")
-        if is_http:
-            logger.warning(f"Using insecure http URL {self.source_xml}")
-        if isinstance(self.source_xml, str) and (is_https or is_http):
-            with urlopen(self.source_xml) as f:
+        if isinstance(self.source_xml, str) and str(self.source_xml).startswith("https://"):
+            with urlopen(self.source_xml) as f:  # nosec
                 return f.read().decode("utf-8")
         return Path(self.source_xml).read_text(encoding="utf8")
 

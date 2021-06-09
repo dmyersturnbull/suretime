@@ -21,7 +21,7 @@ from datetime import datetime, timezone, timedelta
 import logging
 from dataclasses import dataclass
 from functools import total_ordering
-from typing import Mapping, FrozenSet, Dict, Union
+from typing import Mapping, FrozenSet, Dict, Union, Optional
 from zoneinfo import ZoneInfo
 
 
@@ -32,12 +32,56 @@ TzMapType = Mapping[str, Mapping[str, FrozenSet[ZoneInfo]]]
 TzDictType = Dict[str, Dict[str, FrozenSet[ZoneInfo]]]
 
 
+@dataclass(frozen=True, repr=True, order=True)
+class GenericTimezone:
+    """
+    A generic timezone that matches zero or more IANA timezones.
+    Contains the source zone (e.g. America/Los_Angeles or Mountain Standard Time),
+    along with the territory.
+
+    Attributes:
+        name: The name of the zone (e.g. Mountain Standard Time) or America/Los_Angeles
+        territory: None for IANA zones, the 2-letter territory code,
+                   or "primary" if the zone is missing
+        ianas: set of IANA zones that match, sorted alphabetically by name
+    """
+
+    name: str
+    territory: Optional[str]
+    ianas: FrozenSet[ZoneInfo]
+
+    @property
+    def is_iana(self) -> bool:
+        return len(self.ianas) == 1 and self.name == next(iter(self.ianas))
+
+    @property
+    def has_iana(self) -> bool:
+        return len(self.ianas) > 0
+
+
+@dataclass(frozen=True, repr=True, order=True)
+class PreciseTimezone:
+    """
+    A timezone that matches a single IANA ZoneInfo, with info about the source zone.
+
+    Attributes:
+        name: The name of the zone (e.g. Mountain Standard Time) or America/Los_Angeles
+        territory: None for IANA zones, the 2-letter territory code,
+                   or "primary" if the zone is missing
+        iana: set of IANA zones that match, sorted alphabetically by name
+    """
+
+    name: str
+    territory: Optional[str]
+    iana: ZoneInfo
+
+
 @total_ordering
 @dataclass(frozen=True, repr=True)
 class ZonedDatetime:
     local: datetime
     zone: ZoneInfo
-    original_zone: str
+    source: GenericTimezone
 
     def __post_init__(self):
         if self.local.tzname() is None:
@@ -61,10 +105,14 @@ class ZonedDatetime:
     def iso_with_zone(self) -> str:
         return f"{self.local.isoformat(timespec='microseconds')} [{self.zone}]"
 
+    @property
+    def original_zone(self) -> str:
+        return self.source.name
+
     def is_identical_to(self, other: ZonedDatetime) -> bool:
-        return (self.local, self.original_zone, self.zone) == (
+        return (self.local, self.source, self.zone) == (
             other.local,
-            other.original_zone,
+            other.source,
             other.zone,
         )
 
@@ -142,4 +190,11 @@ class TaggedInterval:
         return f"{self.start.iso_with_zone} to {self.end.iso_with_zone} ({self.n_nanos_real}"
 
 
-__all__ = ["TaggedDatetime", "TaggedInterval", "TzMapType", "TzDictType"]
+__all__ = [
+    "TaggedDatetime",
+    "TaggedInterval",
+    "TzMapType",
+    "TzDictType",
+    "GenericTimezone",
+    "PreciseTimezone",
+]

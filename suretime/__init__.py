@@ -23,7 +23,7 @@ from importlib.metadata import metadata as __load
 from pathlib import Path
 
 from suretime._setup import logger
-from suretime._mapping import TimezoneMap
+from suretime._mapping import TimezoneMap, TimezoneMaps
 from suretime._cache import TimezoneMapBackend, TimezoneMapFilesysCache
 from suretime._model import TaggedDatetime, TaggedInterval
 
@@ -47,7 +47,7 @@ except PackageNotFoundError:  # pragma: no cover
     logger.error(f"Could not load package metadata for {pkg}. Is it installed?")
 
 
-tz_map = TimezoneMap.cached()
+TzMap = TimezoneMaps.cached()
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -58,12 +58,13 @@ if __name__ == "__main__":  # pragma: no cover
 
 
 __all__ = [
-    "tz_map",
+    "TzMap",
     "datetime",
     "timedelta",
     "timezone",
     "ZoneInfo",
     "TimezoneMap",
+    "TimezoneMaps",
     "TimezoneMapBackend",
     "TimezoneMapFilesysCache",
     "TaggedDatetime",

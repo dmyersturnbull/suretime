@@ -14,6 +14,15 @@
 (Try to) get IANA timezones on Windows.
 Get fully resolved timestamps and intervals and easily calculate properties.
 
+Also see [tzlocal](https://github.com/regebro/tzlocal).
+It sometimes does a better job of getting an IANA zone from your local system zone.
+However, it only works for your local system zone and relies on OS system files
+(both Unix and Windows), so it yields different results on different platforms.
+In contrast, suretime is platform-invariant and a little more precise
+(e.g. by considering territories), but will fail to map the local system zone
+more often than tzlocal. If you don’t need the platform-invariance, combine both for the
+best results.
+
 Timestamps are resolved as accurately as the system permits.
 Downloads and caches an up-to-date timezone name map if necessary.
 You can map between zone names and find your local IANA zone.
@@ -23,25 +32,32 @@ or user boarding a flight.
 Note that there is no 1-1 mapping between Windows and IANA timezones.
 There are several other limitations and [known issues](https://github.com/dmyersturnbull/suretime/issues).
 
-To install: `pip install suretime`. For platform independence, also install `tzdata==2021.1`.
-A few examples:
+To install: `pip install suretime tzdata`.
+Examples:
 
 ```python
-from suretime import tz_map, datetime
+from suretime import TzMap, datetime
 
 # Get your local system, non-IANA timezone
 system_time = datetime.now().astimezone()
-system_timezone = system_time.tzname()
+system_timezone = system_time.tzname()                      # e.g. Pacific Standard Time
 
 # Get an IANA timezone instead:
-tz_map.local_primary_zone()                          # ............ | ZoneInfo[America/Los_Angeles]
+TzMap.local_primary_zone()                                  # ZoneInfo[America/Los_Angeles]
 # Or for an arbitrary system timezone name:
-tz_map.primary_zone(system_timezone)                 # ............ | ZoneInfo[America/Los_Angeles]
+TzMap.primary_zone(system_timezone)                         # ZoneInfo[America/Los_Angeles]
 # Of course, it maps IANA zones to themselves:
-tz_map.primary_zone("America/Los_Angeles")           # ............ | ZoneInfo[America/Los_Angeles]
+TzMap.primary_zone("America/Los_Angeles")                   # ZoneInfo[America/Los_Angeles]
 
 # Get all IANA timezones that could match a zone
-tz_map.get_primary_zone("Russia Time Zone 3", "UA")  # | ZoneInfo["Europe/Samara"]
+# The first uses the primary/null territory
+# The second uses the territory "AQ"
+TzMap.primary_zones("Central Pacific Standard Time")        # {ZoneInfo[Pacific/Guadalcanal]}
+TzMap.primary_zones("Central Pacific Standard Time", "AQ")  # {ZoneInfo[Antarctica/Casey]}
+
+# Get 1 matching IANA zone; "get" means optional
+TzMap.primary_zone("Central Pacific Standard Time", "AQ")   # ZoneInfo[Pacific/Casey]
+TzMap.get_primary_zone("nonexistent zone")                  # None
 
 # Get a fully resolved "tagged datetime"
 # It contains:
@@ -49,24 +65,26 @@ tz_map.get_primary_zone("Russia Time Zone 3", "UA")  # | ZoneInfo["Europe/Samara
 # - The primary IANA ZoneInfo
 # - The original system timezone
 # - A system wall time (`time.monotonic_ns`)
-tagged = tz_map.tagged_local_datetime(datetime.now())  # ..... | TaggedDatetime[ ... ]
+tagged = TzMap.tagged_local_datetime(datetime.now())        # TaggedDatetime[ ... ]
+
+# 2021-01-20T22:24:13.219253-07:00 [America/Los_Angeles]
+print(tagged.iso_with_zone)                                 # <datetime> [zone]
+print(tagged.source.territory)                              # "primary"
 
 # Compare tagged datetimes
-print(tagged < tagged)                  # .................... | False
-print(tagged == tagged)                 # .................... | True: They're the same point in time
-print(tagged == system_time)            # .................... | True: They're the same point in time
-print(tagged.is_identical_to(tagged))   # .................... | True: They're exactly the same
-# "2021-01-20T22:24:13.219253-07:00 [America/Los_Angeles]" :
-print(tagged.iso_with_zone)
+print(tagged < tagged)                                      # False
+print(tagged == tagged)                                     # True: They're the same point in time
+print(tagged == system_time)                                # True: They're the same point in time
+print(tagged.is_identical_to(tagged))                       # True: They're exactly the same
 
 # Get a "tagged duration" with the start and end, and monotonic real time in nanoseconds
-then = tz_map.tagged_now()                    # .............. | TaggedDatetime [ ... ]
-for i in list(range(10000)): i += 1           # .............. | Just waiting a little
-now = tz_map.tagged_now()                     # .............. | TaggedInterval [ ... ]
-interval = tz_map.tagged_interval(then, now)  # .............. | TaggedInterval [ ... ]
-print(interval.delta_real_time)               # .............. | Actual time passed
-print(interval.delta_calendar_time)           # .............. | Simple end - start
-print(interval.exact_duration_str)            # .............. | days:HH:mm:ss.millis.micros.nanos
+then = TzMap.tagged_now()                                   # TaggedDatetime [ ... ]
+for i in list(range(10000)): i += 1                         # Just waiting a little
+now = TzMap.tagged_now()                                    # TaggedInterval [ ... ]
+interval = TzMap.tagged_interval(then, now)                 # TaggedInterval [ ... ]
+print(interval.delta_real_time)                             # Actual time passed
+print(interval.delta_calendar_time)                         # Simple end - start
+print(interval.exact_duration_str)                          # days:HH:mm:ss.millis.micros.nanos
 ```
 
 Licensed under the terms of the [Apache License 2.0](https://spdx.org/licenses/Apache-2.0.html).

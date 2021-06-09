@@ -1,13 +1,13 @@
 import pytest
 
-from suretime import tz_map
+from suretime import TzMap
 
 
 class TestInit:
     def test(self):
-        assert tz_map.primary_zone("Europe/Tiraspol") == "Europe/Tiraspol"
-        assert tz_map.primary_zone("Central Pacific Standard Time") == "Pacific/Guadalcanal"
-        assert tz_map.primary_zone("Central Pacific Standard Time", "AQ") == "Antarctica/Casey"
+        assert TzMap.primary_zone("Europe/Tiraspol") == "Europe/Tiraspol"
+        assert TzMap.primary_zone("Central Pacific Standard Time") == "Pacific/Guadalcanal"
+        assert TzMap.primary_zone("Central Pacific Standard Time", "AQ") == "Antarctica/Casey"
 
 
 if __name__ == "__main__":
