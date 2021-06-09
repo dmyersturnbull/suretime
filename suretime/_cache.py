@@ -82,7 +82,7 @@ class TimezoneMapBackend(metaclass=abc.ABCMeta):
 @dataclass(frozen=True, repr=True)
 class TimezoneMapFilesysCache(TimezoneMapBackend):
     path: Optional[Path] = None
-    expiration_mins: int = 43830
+    expiration_mins: int = 34560
     source_xml: Union[Path, str] = cldr_github_url
 
     def get(self) -> TzMapType:
@@ -90,6 +90,9 @@ class TimezoneMapFilesysCache(TimezoneMapBackend):
         if read is not None:
             return read
         return self._save()
+
+    def download(self) -> None:
+        self._save()
 
     def _read(self) -> Optional[TzMapType]:
         if self.path is None or not self.path.exists():
@@ -106,7 +109,8 @@ class TimezoneMapFilesysCache(TimezoneMapBackend):
         return read["mapping"]
 
     def _save(self) -> TzMapType:
-        saved = dict(downloadTimestamp=datetime.now(tz=timezone.utc), mapping=self._build())
+        built = self._build()
+        saved = dict(downloadTimestamp=datetime.now(tz=timezone.utc), mapping=built)
         encoded = TzMapCacheEncoder(ensure_ascii=False, allow_nan=False).encode(saved)
         if self.path is not None:
             self.path.write_text(encoded, encoding="utf8")
@@ -134,7 +138,10 @@ class TimezoneMapFilesysCache(TimezoneMapBackend):
 
     def _download(self) -> str:
         is_https = str(self.source_xml).startswith("https://")
-        is_http = str(self.source_xml).startswith("https://")
+        # noinspection HttpUrlsUsage
+        is_http = str(self.source_xml).startswith("http://")
+        if is_http:
+            logger.warning(f"Using insecure http URL {self.source_xml}")
         if isinstance(self.source_xml, str) and (is_https or is_http):
             with urlopen(self.source_xml) as f:
                 return f.read().decode("utf-8")

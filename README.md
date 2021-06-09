@@ -11,7 +11,8 @@
 [![Code Quality (Scrutinizer)](https://scrutinizer-ci.com/g/dmyersturnbull/suretime/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/dmyersturnbull/suretime/?branch=main)
 [![Created with Tyrannosaurus](https://img.shields.io/badge/Created_with-Tyrannosaurus-0000ff.svg)](https://github.com/dmyersturnbull/tyrannosaurus)
 
-Get IANA timezones and fully resolved timestamps and intervals, even on Windows.
+(Try to) get IANA timezones on Windows.
+Get fully resolved timestamps and intervals and easily calculate properties.
 
 Timestamps are resolved as accurately as the system permits.
 Downloads and caches an up-to-date timezone name map if necessary.
@@ -33,14 +34,14 @@ system_time = datetime.now().astimezone()
 system_timezone = system_time.tzname()
 
 # Get an IANA timezone instead:
-tz_map.local_primary_zone()                     # ............ | ZoneInfo[America/Los_Angeles]
+tz_map.local_primary_zone()                          # ............ | ZoneInfo[America/Los_Angeles]
 # Or for an arbitrary system timezone name:
-tz_map.primary(system_timezone)                 # ............ | ZoneInfo[America/Los_Angeles]
+tz_map.primary_zone(system_timezone)                 # ............ | ZoneInfo[America/Los_Angeles]
 # Of course, it maps IANA zones to themselves:
-tz_map.primary("America/Los_Angeles")           # ............ | ZoneInfo[America/Los_Angeles]
+tz_map.primary_zone("America/Los_Angeles")           # ............ | ZoneInfo[America/Los_Angeles]
 
 # Get all IANA timezones that could match a zone
-tz_map.get_zones_with_territory("Russia Time Zone 3", "UA")  # | ZoneInfo["Europe/Samara"]
+tz_map.get_primary_zone("Russia Time Zone 3", "UA")  # | ZoneInfo["Europe/Samara"]
 
 # Get a fully resolved "tagged datetime"
 # It contains:

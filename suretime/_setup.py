@@ -28,17 +28,13 @@ logger = logging.getLogger("suretime")
 
 if os.name == "nt":
     logger.warning(f"On Windows, timezones are mapped ambiguously to IANA timezones.")
-    logger.warning(
-        f"On most Windows systems, the monotonic system clock has only millisecond resolution."
-    )
+    logger.warning(f"On Windows, the monotonic clock only has millisecond resolution.")
 
 try:
     tzdata_vr = load_metadata("tzdata")["version"]
     logger.info(f"Using tzdata version {tzdata_vr}")
 except PackageNotFoundError:
-    logger.warning(
-        f"tzdata not found, so using built-in timezone, which may differ between systems."
-    )
+    logger.warning(f"tzdata not found; using built-in, which may differ between systems.")
 
 # Let's test we don't get a ZoneInfoNotFoundError
 UTC = ZoneInfo("UTC")

@@ -21,9 +21,8 @@ from datetime import datetime, timedelta, timezone
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import metadata as __load
 from pathlib import Path
-from typing import Optional
 
-from _setup import logger
+from suretime._setup import logger
 from suretime._mapping import TimezoneMap
 from suretime._cache import TimezoneMapBackend, TimezoneMapFilesysCache
 from suretime._model import TaggedDatetime, TaggedInterval

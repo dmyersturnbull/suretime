@@ -15,7 +15,7 @@ build-backend = "poetry.masonry.api"
 name = "suretime"
 version = "0.1.0"
 
-description = "Get IANA timezones and fully resolved timestamps, even on Windows"
+description = "Handle IANA timezones and fully resolved timestamps and intervals on all platforms"
 keywords = ["timezone", "zoneinfo", "datetime", "timestamp"]
 authors = ["Douglas Myers-Turnbull"]
 maintainers = ["Douglas Myers-Turnbull"]
@@ -33,7 +33,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
-include = []
 
 [tool.poetry.urls]
 CI = "https://github.com/dmyersturnbull/suretime/actions"
@@ -46,28 +45,29 @@ Download = "https://pypi.org/project/suretime/"
 #########################################################################################
 
 [tool.poetry.dependencies]
-python                   = ">=3.9, <4"
+python                   = "^3.9"
 
 [tool.poetry.dev-dependencies]
-bandit                   = ">=1.7, <2.0"
-black                    = "=20.8b1"
-coverage                 = {extras = ["toml"], version = "^5"}
-flake8                   = "^3"
-flake8-bugbear           = "^20"
-flake8-docstrings        = "^1"
-pre-commit               = ">=2.11, <3.0"
-pre-commit-hooks         = ">=3.4, <4.0"
-pytest                   = "^6"
-pytest-cov               = "^2"
+black                    = "==21.5b2"
+pre-commit               = "^2.13"
+pre-commit-hooks         = "^4.0"
+bandit                   = "^1.7"
+pytest                   = "^6.2"
+coverage                 = {extras = ["toml"], version = "^5.5"}
+pytest-cov               = "^2.11"
+flake8                   = "^3.9"
+flake8-docstrings        = "^1.5"
+flake8-bugbear           = ">=21"
+sphinx                   = "^4.0"
+sphinx-copybutton        = ">=0.3, <1.0"
+sphinx-autoapi           = "^1.5"
+sphinx-rtd-theme         = ">=0.5, <1.0"
 tomlkit                  = ">=0.7, <1.0"
-
-[tool.poetry.extras]
 
 
 #########################################################################################
 # Tyrannosaurus
 #########################################################################################
-
 
 [tool.tyrannosaurus.options]
 sort     = true
@@ -122,12 +122,20 @@ license      = true
 authors      = true
 github       = true
 travis       = true
-dockerfile   = true
 readme       = true
 changelog    = true
-citation     = true
-codemeta     = true
 environment  = true
+
+
+#########################################################################################
+# Testing
+#########################################################################################
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 
 
 #########################################################################################
@@ -135,38 +143,14 @@ environment  = true
 #########################################################################################
 
 [tool.coverage.paths]
-source = ["suretime"]
+source = ["serviceit"]
 
 [tool.coverage.run]
-source = ["suretime"]
+source = ["serviceit"]
 
 [tool.coverage.report]
 show_missing = true
 
 [tool.black]
 line-length = 100
-# As of December 2020, black doesn't accept py39
 target-version = ["py38"]
-
-[tool.isort]
-line_length = 100
-
-[mypy]
-check_untyped_defs = true
-strict_optional = true
-
-
-# ------- THE FOLLOWING ARE NOT USED BY THEIR RESPECTIVE TOOLS  --------
-# --- There are open discussions about supporting pyproject for each ---
-# https://github.com/python/mypy/issues/5205
-# https://github.com/PyCQA/bandit/issues/606
-# https://github.com/PyCQA/pycodestyle/issues/813
-# https://github.com/PyCQA/pydocstyle/issues/447
-
-[tool.bandit]
-
-[tool.pycodestyle]
-max-line-length = 100
-statistics = true
-
-[tool.pydocstyle]
