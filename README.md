@@ -7,7 +7,7 @@
 [![Version on PyPi](https://img.shields.io/pypi/v/suretime)](https://pypi.org/project/suretime)
 [![Build (GitHub Actions)](https://img.shields.io/github/workflow/status/dmyersturnbull/suretime/Build%20&%20test?label=Build%20&%20test)](https://github.com/dmyersturnbull/suretime/actions)
 [![Test coverage (coveralls)](https://coveralls.io/repos/github/dmyersturnbull/suretime/badge.svg?branch=main&service=github)](https://coveralls.io/github/dmyersturnbull/suretime?branch=main)
-[![Maintainability (Code Climate)](https://api.codeclimate.com/v1/badges/2fbbf51ddb15e26f63f6/maintainability)](https://codeclimate.com/github/dmyersturnbull/suretime/maintainability)
+[![Maintainability (Code Climate)](https://api.codeclimate.com/v1/badges/14b23b28b0d9c37a0ebf/maintainability)](https://codeclimate.com/github/dmyersturnbull/suretime/maintainability)
 [![Code Quality (Scrutinizer)](https://scrutinizer-ci.com/g/dmyersturnbull/suretime/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/dmyersturnbull/suretime/?branch=main)
 [![Created with Tyrannosaurus](https://img.shields.io/badge/Created_with-Tyrannosaurus-0000ff.svg)](https://github.com/dmyersturnbull/tyrannosaurus)
 
