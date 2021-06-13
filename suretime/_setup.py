@@ -19,18 +19,21 @@ Code that performs initialization for suretime.
 from __future__ import annotations
 import logging
 import os
-from importlib.metadata import metadata as load_metadata
-from importlib.metadata import PackageNotFoundError
 from zoneinfo import ZoneInfo
 
-logger = logging.getLogger("suretime")
+from suretime._utils import TzUtils
 
+logger = logging.getLogger("suretime")
+_import_clock_time = TzUtils.get_clock_time()
 
 if os.name == "nt":
     logger.warning(f"On Windows, timezones are mapped ambiguously to IANA timezones.")
     logger.warning(f"On Windows, the monotonic clock only has millisecond resolution.")
-if os.name == "posix":
-    logger.warning(f"The monotonic clock in Linux incorrectly stops on suspend.")
+
+if os.name == "posix" and _import_clock_time.clock.name == "monotonic":
+    logger.warning(
+        f"Found monotonic clock in Linux incorrectly stops on suspend. Better clocks not found."
+    )
 
 try:
     import tzdata

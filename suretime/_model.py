@@ -17,19 +17,26 @@ Model and utility classes for suretime.
 """
 
 from __future__ import annotations
+import calendar
 from datetime import datetime, timezone, timedelta
 import logging
 from dataclasses import dataclass
+from decimal import Decimal
 from functools import total_ordering
 from typing import Mapping, FrozenSet, Dict, Union, Optional
 from zoneinfo import ZoneInfo
 
+import decimal
+
+from suretime._utils import Clock, ClockTime
 
 logger = logging.getLogger("suretime")
 
 
 TzMapType = Mapping[str, Mapping[str, FrozenSet[ZoneInfo]]]
 TzDictType = Dict[str, Dict[str, FrozenSet[ZoneInfo]]]
+
+ROUNDING = decimal.ROUND_HALF_DOWN
 
 
 class CannotMapTzError(Exception):
@@ -59,6 +66,12 @@ class DatetimeHasZoneError(ValueError):
 class DatetimeMissingZoneError(ValueError):
     """
     Raised when a datetime lacks a required zone.
+    """
+
+
+class InvalidIntervalError(ValueError):
+    """
+    Raised when an interval does not make sense.
     """
 
 
@@ -109,74 +122,153 @@ class ExactTimezone:
 @total_ordering
 @dataclass(frozen=True, repr=True)
 class ZonedDatetime:
-    local: datetime
+    dt: datetime
     zone: ZoneInfo
     source: GenericTimezone
 
     def __post_init__(self):
-        if self.local.tzname() is None:
-            raise ValueError(
+        if self.dt.tzname() is None:
+            raise DatetimeMissingZoneError(
                 f"A {self.__class__.__name__} {self} cannot be created from a local datetime"
             )
 
     @property
-    def as_utc(self) -> datetime:
-        return self.local.astimezone(timezone.utc)
+    def utc(self) -> ZonedDatetime:
+        dt = self.dt.astimezone(tz=timezone.utc)
+        return ZonedDatetime(dt, ZoneInfo(dt.tzname()), self.source)
 
     @property
     def iso(self) -> str:
-        return f"{self.local.isoformat()}"
+        return self.dt.isoformat()
 
     @property
-    def iso_utc(self) -> str:
-        return f"{self.local.astimezone(timezone.utc).isoformat()}"
+    def iso_full(self) -> str:
+        return self.dt.isoformat(timespec="microseconds")
 
     @property
     def iso_with_zone(self) -> str:
-        return f"{self.local.isoformat(timespec='microseconds')} [{self.zone}]"
-
-    @property
-    def original_zone(self) -> str:
-        return self.source.name
+        return f"{self.dt.isoformat(timespec='microseconds')} [{self.zone}]"
 
     def is_identical_to(self, other: ZonedDatetime) -> bool:
-        return (self.local, self.source, self.zone) == (
-            other.local,
-            other.source,
-            other.zone,
-        )
+        us = (self.dt, self.source, self.zone)
+        them = (other.dt, other.source, other.zone)
+        return us == them
 
     def __eq__(self, other: Union[datetime, ZonedDatetime]):
-        return self.as_utc == self.__to_utc(other)
+        return self.utc == self.__to_utc(other)
 
     def __lt__(self, other: Union[datetime, ZonedDatetime]):
-        return self.as_utc < self.__to_utc(other)
+        return self.utc < self.__to_utc(other)
 
     def __to_utc(self, other: Union[datetime, ZonedDatetime]) -> datetime:
         if isinstance(other, datetime):
             if other.tzinfo is None:
-                raise ValueError(f"Cannot compare zoned datetime to a datetime without a zone")
+                raise DatetimeMissingZoneError(
+                    f"Cannot compare zoned datetime to a datetime without a zone"
+                )
             return other.astimezone(tz=timezone.utc)
         elif isinstance(other, ZonedDatetime):
-            return other.local.astimezone(tz=timezone.utc)
+            return other.dt.astimezone(tz=timezone.utc)
         else:
             raise TypeError(f"Cannot compare type {type(other)} to zoned datetime")
 
     def __str__(self) -> str:
-        return f"({self.local.isoformat()} [{self.zone}])"
+        return f"({self.dt.isoformat()} [{self.zone}])"
 
 
 @dataclass(frozen=True, repr=True)
 class TaggedDatetime(ZonedDatetime):
-    mono_clock_ns: int
+    clock_ns: int
+    clock: Clock
 
-    def is_identical_to(self, other: ZonedDatetime) -> bool:
-        return (self.local, self.original_zone, self.zone, self.mono_clock_ns) == (
-            other.local,
-            other.original_zone,
-            other.zone,
-            self.mono_clock_ns,
-        )
+    @property
+    def utc(self) -> TaggedDatetime:
+        dt = self.dt.astimezone(timezone.utc)
+        return TaggedDatetime(dt, timezone.utc, self.source, self.clock_ns, self.clock)
+
+    @property
+    def clock_time(self) -> ClockTime:
+        return ClockTime(self.clock_ns, self.clock)
+
+    @property
+    def clock_sec(self) -> float:
+        # float will be exact
+        return self.clock_ns / 1e9
+
+    @property
+    def clock_to_utc(self) -> Optional[datetime]:
+        if self.clock.info.is_epoch:
+            return datetime.fromtimestamp(self.clock_ns, timezone.utc)
+        return None
+
+    def at_clock(self, clock: ClockTime) -> TaggedDatetime:
+        """
+        Return a TaggedDatetime like this one but at the new nanosecond clock time.
+
+        """
+        if clock.clock != self.clock:
+            raise ValueError(f"Clock {clock.clock.name} is not {self.clock.name}")
+        return self.at_nanos(clock.nanos)
+
+    def at_nanos(self, ns: int) -> TaggedDatetime:
+        """
+        Return a TaggedDatetime like this one but at the new nanosecond clock time.
+
+        .. caution::
+
+            The nanosecond value must be from the same clock.
+        """
+        delta = ns - self.clock_ns
+        dt = self.dt + timedelta(microseconds=delta // 1000)
+        return TaggedDatetime(dt, self.zone, self.source, ns, self.clock)
+
+    def __sub__(self, delta: timedelta):
+        return self + (-delta)
+
+    def __add__(self, delta: timedelta):
+        ns = delta.microseconds * 1000
+        return TaggedDatetime(self.dt + delta, self.zone, self.source, ns, self.clock)
+
+    def is_identical_to(self, other: TaggedDatetime) -> bool:
+        us = (self.dt, self.zone, self.source, self.clock_ns, self.clock)
+        them = (other.dt, other.zone, other.source, other.clock_ns, other.clock)
+        return us == them
+
+
+@dataclass(frozen=True, repr=True, order=True)
+class Duration:
+    _start: datetime
+    _end: datetime
+
+    @property
+    def delta(self) -> timedelta:
+        return self._end - self._start
+
+    @property
+    def iso(self) -> str:
+        """
+        Returns an ISO 8601-formatted duration string.
+        For example: ``D2Y5M22DTH0M36S42.310837``
+        Note that a period (.) is always used as the decimal separator.
+        """
+        start = self._start
+        end = self._end
+        y = end.year - start.year
+        m = end.month - start.month
+        d = end.day - start.day
+        hr = end.hour - start.hour
+        mn = end.minute - start.minute
+        micro = Decimal(end.second - start.second) + (
+            end.microsecond - start.microsecond
+        ) / Decimal(1e6)
+        micro = micro.quantize(Decimal(1e-6), rounding=ROUNDING)
+        micro = str(micro).replace(",", ".")
+        if micro.startswith("."):
+            micro = "0" + micro
+        return f"P{y}Y{m}M{d}DT{hr}H{mn}M{micro}S"
+
+    def __str__(self) -> str:
+        return self.iso
 
 
 @dataclass(frozen=True, repr=True, order=True)
@@ -187,37 +279,58 @@ class TaggedInterval:
     def __post_init__(self):
         # Most importantly, this catches cases where the clock reset
         # This could happen after a system restart
-        if self.start.as_utc > self.end.as_utc:
-            raise ValueError(f"Start {self.start} is after {self.end}.")
-        start_ns, end_ns = self.start.mono_clock_ns, self.end.mono_clock_ns
+        if self.start.utc > self.end.utc:
+            raise InvalidIntervalError(f"Start {self.start} is after {self.end}.")
+        start_ns, end_ns = self.start.clock_ns, self.end.clock_ns
         if start_ns > end_ns:
-            raise ValueError(
+            raise InvalidIntervalError(
                 f"Clock times for {self.start} and {self.end} are reversed: {start_ns} > {end_ns}"
             )
 
     @property
-    def n_nanos_real(self) -> int:
-        return self.end.mono_clock_ns - self.start.mono_clock_ns
+    def real_delta(self) -> timedelta:
+        return timedelta(microseconds=self.round_real(int(1e9)))
 
     @property
-    def n_micros_real(self) -> int:
-        return int(round((self.end.mono_clock_ns - self.start.mono_clock_ns) / 1000))
+    def real_nanos(self) -> int:
+        return self.end.clock_ns - self.start.clock_ns
 
     @property
-    def delta_real_time(self) -> timedelta:
-        return timedelta(microseconds=self.n_micros_real)
+    def wall_delta(self) -> timedelta:
+        return self.end.utc.dt - self.start.utc.dt
 
     @property
-    def delta_calendar_time(self) -> timedelta:
-        return self.end.as_utc - self.start.as_utc
+    def wall_nanos(self) -> int:
+        return int((self.end.utc.dt - self.start.utc.dt).total_seconds() * 1e9)
 
     @property
-    def real_delta_str(self) -> str:
-        micros = self.n_micros_real
-        return str(timedelta(microseconds=micros)) + "." + str(self.n_nanos_real % 1000)
+    def real_str(self) -> str:
+        ns = self.real_nanos
+        td = timedelta(seconds=ns // 1e9)
+        return str(td) + "." + str(ns % 1e9)
+
+    def round_real(self, exponent: int) -> int:
+        if exponent not in {1, 1e3, 1e6, 1e9}:
+            raise ValueError(f"Bad exponent {exponent}")
+        scale = Decimal(1e9 / exponent)
+        nanos = Decimal(self.end.clock_ns) - Decimal(self.start.clock_ns)
+        downsized = nanos / scale
+        return int(downsized.to_integral_value(decimal.ROUND_HALF_DOWN))
+
+    @property
+    def iso(self) -> str:
+        """
+        Converts to an ISO 8601 interval string with the full start and end.
+        Uses ``--`` as the separator.
+        """
+        return self.start.iso + "--" + self.end.iso
+
+    @property
+    def duration(self) -> Duration:
+        return Duration(self.start.dt, self.end.dt)
 
     def __str__(self) -> str:
-        return f"{self.start.iso_with_zone} to {self.end.iso_with_zone} ({self.n_nanos_real}"
+        return f"{self.start.iso_with_zone} to {self.end.iso_with_zone} ({self.real_nanos}"
 
 
 __all__ = [
@@ -232,4 +345,6 @@ __all__ = [
     "MappedTzNotUniqueError",
     "DatetimeHasZoneError",
     "DatetimeMissingZoneError",
+    "InvalidIntervalError",
+    "Duration",
 ]

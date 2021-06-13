@@ -13,7 +13,7 @@ build-backend = "poetry.masonry.api"
 [tool.poetry]
 
 name = "suretime"
-version = "0.1.0"
+version = "0.2.0"
 
 description = "Handle IANA timezones and fully resolved timestamps and intervals on all platforms"
 keywords = ["timezone", "zoneinfo", "datetime", "timestamp"]
@@ -47,6 +47,7 @@ Download = "https://pypi.org/project/suretime/"
 [tool.poetry.dependencies]
 python                   = "^3.9"
 defusedxml               = ">=0.7, <1.0"
+ntplib                   = ">=0.4, <1.0"
 
 [tool.poetry.dev-dependencies]
 black                    = "==21.5b2"
