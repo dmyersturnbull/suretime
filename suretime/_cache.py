@@ -1,4 +1,6 @@
 """
+Locally stored cache for suretime.
+
 Copyright 2021 Douglas Myers-Turnbull
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,13 +31,13 @@ from zoneinfo import ZoneInfo, available_timezones
 
 from suretime._model import TzMapType, TzDictType
 
-logger = logging.getLogger("suretime")
-
 import defusedxml.ElementTree as Xml
 
 cldr_github_url = (
     "https://raw.githubusercontent.com/unicode-org/cldr/master/common/supplemental/windowsZones.xml"
 )
+
+logger = logging.getLogger("suretime")
 
 
 class TzMapCacheEncoder(json.JSONEncoder):
