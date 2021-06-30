@@ -29,10 +29,13 @@ logger = logging.getLogger("suretime")
 _import_clock_time = TzUtils.get_clock_time()
 
 if os.name == "nt":
-    logger.warning("On Windows, timezones are mapped ambiguously to IANA timezones.")
-    logger.warning("On Windows, the monotonic clock only has millisecond resolution.")
+    # debug because we raise errors on strict mapping anyway
+    logger.debug("On Windows, timezones are mapped ambiguously to IANA timezones.")
+    # debug because many clocks aren't crazy-precise anyway
+    logger.debug("On Windows, the monotonic clock only has millisecond resolution.")
 
 if os.name == "posix" and _import_clock_time.clock.name == "monotonic":
+    # warning because it's pretty platform-dependent (and uncommon)
     logger.warning("Linux monotonic clock incorrectly stops on suspend. No better clock found.")
 
 try:
