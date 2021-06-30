@@ -31,7 +31,7 @@ from pathlib import Path
 from suretime._setup import logger
 from suretime._mapping import TimezoneMap, TimezoneMaps
 from suretime._cache import TimezoneMapBackend, TimezoneMapFilesysCache
-from suretime._model import TaggedDatetime, TaggedInterval
+from suretime._model import TaggedDatetime, TaggedInterval, ZonedDatetime, Duration
 
 
 pkg = Path(__file__).absolute().parent.name
@@ -54,6 +54,8 @@ except PackageNotFoundError:  # pragma: no cover
 
 
 Suretime = TimezoneMaps.cached()
+Types = Suretime.Types
+Errors = Suretime.Errors
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -73,6 +75,10 @@ __all__ = [
     "TimezoneMaps",
     "TimezoneMapBackend",
     "TimezoneMapFilesysCache",
+    "ZonedDatetime",
     "TaggedDatetime",
     "TaggedInterval",
+    "Duration",
+    "Types",
+    "Errors",
 ]

@@ -27,9 +27,11 @@ from zoneinfo import ZoneInfo
 from copy import deepcopy
 
 from suretime._model import (
+    ZonedDatetime,
     TaggedDatetime,
     TaggedInterval,
     TzMapType,
+    Duration,
     GenericTimezone,
     DatetimeHasZoneError,
     MappedTzNotFoundError,
@@ -37,10 +39,20 @@ from suretime._model import (
     CannotMapTzError,
     DatetimeMissingZoneError,
     InvalidIntervalError,
+    DatetimeParseError,
     ExactTimezone,
 )
 from suretime._cache import TimezoneMapFilesysCache, TimezoneMapBackend
-from suretime._utils import TzUtils, Clock, ClockTime, ClockInfo, SysTzInfo, NtpTime, NtpClockType, NtpContinents
+from suretime._utils import (
+    TzUtils,
+    Clock,
+    ClockTime,
+    ClockInfo,
+    SysTzInfo,
+    NtpTime,
+    NtpClockType,
+    NtpContinents,
+)
 
 logger = logging.getLogger("suretime")
 empty_frozenset = frozenset([])
@@ -221,6 +233,7 @@ class Tagged:
 
 
 class Errors:
+    DatetimeParseError = DatetimeParseError
     TaggedDatetime = TaggedDatetime
     TaggedInterval = TaggedInterval
     GenericTimezone = GenericTimezone
@@ -233,6 +246,10 @@ class Errors:
 
 
 class Types:
+    ZonedDatetime = ZonedDatetime
+    TaggedDatetime = TaggedDatetime
+    TaggedInterval = TaggedInterval
+    Duration = Duration
     Clock = Clock
     ClockTime = ClockTime
     ClockInfo = ClockInfo

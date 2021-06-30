@@ -19,6 +19,8 @@ Model and utility classes for suretime.
 """
 
 from __future__ import annotations
+
+import re
 from datetime import datetime, timezone, timedelta
 import logging
 from dataclasses import dataclass
@@ -64,6 +66,12 @@ class DatetimeHasZoneError(ValueError):
 class DatetimeMissingZoneError(ValueError):
     """
     Raised when a datetime lacks a required zone.
+    """
+
+
+class DatetimeParseError(ValueError):
+    """
+    Raised on failure to parse a datetime format.
     """
 
 
@@ -130,6 +138,22 @@ class ZonedDatetime:
                 f"A {self.__class__.__name__} {self} cannot be created from a local datetime"
             )
 
+    @classmethod
+    def parse(cls, s: str) -> ZonedDatetime:
+        """
+        Parses a datetime with a zone.
+        Counterpart to ``iso_with_zone``.
+        """
+        pat = re.compile(r"^ *([^[]+)\[([\/A-Za-z0-9_\-+]+)] *$")
+        match = pat.fullmatch(s)
+        if match is None:
+            raise DatetimeParseError(f"Could not parse {s} to zoned datetime")
+        raw_dt, zone = match.group(1), match.group(2)
+        zone = ZoneInfo(zone)
+        dt = raw_dt.replace("Z", "+00:00").strip().replace(" ", "T").replace(",", ".")
+        dt = datetime.fromisoformat(dt).astimezone(zone)
+        return ZonedDatetime(dt, zone, None)
+
     @property
     def utc(self) -> ZonedDatetime:
         dt = self.dt.astimezone(tz=timezone.utc)
@@ -145,7 +169,10 @@ class ZonedDatetime:
 
     @property
     def iso_with_zone(self) -> str:
-        return f"{self.dt.isoformat(timespec='microseconds')} [{self.zone}]"
+        z = str(self.zone)
+        if z == "UTC":
+            z = "Etc/UTC"
+        return f"{self.dt.isoformat(timespec='microseconds').replace('+00:00', 'Z')} [{z}]"
 
     def is_identical_to(self, other: ZonedDatetime) -> bool:
         us = (self.dt, self.source, self.zone)
@@ -205,7 +232,7 @@ class TaggedDatetime(ZonedDatetime):
             A new TaggedDatetime, or None
         """
         if self.clock.info.is_epoch:
-            dt = datetime.fromtimestamp(self.clock_ns, timezone.utc)
+            dt = datetime.fromtimestamp(self.clock_sec, timezone.utc)
             return TaggedDatetime(dt, timezone.utc, None, self.clock_ns, self.clock)
         return None
 
@@ -344,6 +371,7 @@ class TaggedInterval:
 __all__ = [
     "TaggedDatetime",
     "TaggedInterval",
+    "ZonedDatetime",
     "TzMapType",
     "TzDictType",
     "GenericTimezone",
@@ -353,6 +381,7 @@ __all__ = [
     "MappedTzNotUniqueError",
     "DatetimeHasZoneError",
     "DatetimeMissingZoneError",
+    "DatetimeParseError",
     "InvalidIntervalError",
     "Duration",
 ]

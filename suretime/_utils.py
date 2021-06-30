@@ -39,20 +39,24 @@ logger = logging.getLogger("suretime")
 
 
 class NtpContinents:
-    known = frozenset({
-        "antarctica",
-        "asia",
-        "europe",
-        "north-america",
-        "oceana",
-        "south-america",
-    })
+    known = frozenset(
+        {
+            "antarctica",
+            "asia",
+            "europe",
+            "north-america",
+            "oceana",
+            "south-america",
+        }
+    )
 
     @classmethod
     def of(cls, name: str) -> str:
         name = name.lower().replace(" ", "-").replace("_", "-")
         if name not in NtpContinents.known:
-            raise LookupError(f"Unknown NTP continent {name} (allowed: {','.join(NtpContinents.known)})")
+            raise LookupError(
+                f"Unknown NTP continent {name} (allowed: {','.join(NtpContinents.known)})"
+            )
         return name
 
 
@@ -137,7 +141,6 @@ class ClockTime:
 
 
 class TzUtils:
-
     @classmethod
     def get_ntp_clock(cls, server: str, attribute: Union[str, NtpClockType]) -> ClockTime:
         attribute = NtpClockType.of(attribute).name
@@ -249,4 +252,13 @@ class TzUtils:
         return None
 
 
-__all__ = ["TzUtils", "Clock", "ClockInfo", "ClockTime", "SysTzInfo", "NtpTime", "NtpClockType", "NtpContinents"]
+__all__ = [
+    "TzUtils",
+    "Clock",
+    "ClockInfo",
+    "ClockTime",
+    "SysTzInfo",
+    "NtpTime",
+    "NtpClockType",
+    "NtpContinents",
+]

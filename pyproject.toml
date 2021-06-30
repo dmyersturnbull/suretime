@@ -13,7 +13,7 @@ build-backend = "poetry.masonry.api"
 [tool.poetry]
 
 name = "suretime"
-version = "0.2.0"
+version = "0.2.1"
 
 description = "Handle IANA timezones and fully resolved timestamps and intervals on all platforms"
 keywords = ["timezone", "zoneinfo", "datetime", "timestamp"]
