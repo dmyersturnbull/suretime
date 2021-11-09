@@ -13,7 +13,7 @@ build-backend = "poetry.masonry.api"
 [tool.poetry]
 
 name = "suretime"
-version = "0.1.1"
+version = "0.1.2"
 
 description = "Handle IANA timezones and fully resolved timestamps and intervals on all platforms"
 keywords = ["timezone", "zoneinfo", "datetime", "timestamp"]
@@ -25,10 +25,11 @@ homepage = "https://github.com/dmyersturnbull/suretime"
 repository = "https://github.com/dmyersturnbull/suretime"
 documentation = "https://suretime.readthedocs.io"
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Natural Language :: English",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
 	"Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries :: Python Modules"
@@ -50,21 +51,20 @@ defusedxml               = ">=0.7, <1.0"
 ntplib                   = ">=0.4, <1.0"
 
 [tool.poetry.dev-dependencies]
-black                    = "==21.6b0"
-pre-commit               = "^2.13"
-pre-commit-hooks         = "^4.0"
+pre-commit               = "^2.15"
+pre-commit-hooks         = "^4"
 bandit                   = "^1.7"
-pytest                   = "^6.2"
-coverage                 = {extras = ["toml"], version = "^5.5"}
-pytest-cov               = "^2.11"
-flake8                   = "^3.9"
-flake8-docstrings        = "^1.5"
-flake8-bugbear           = ">=21"
-sphinx                   = "^4.0"
-sphinx-copybutton        = ">=0.3, <1.0"
+flake8                   = "^4"
+flake8-bugbear           = ">=21.9.2"
+flake8-docstrings        = "^1.6"
+nbqa                     = "^1.1"
+pytest                   = "^6"
+coverage                 = {extras = ["toml"], version = "^6"}
+pytest-cov               = "^3"
+Sphinx                   = "^4.2"
 sphinx-autoapi           = "^1.5"
-sphinx-rtd-theme         = ">=0.5, <1.0"
-tomlkit                  = ">=0.7, <1.0"
+sphinx-copybutton        = ">=0.4, <1.0"
+sphinx-rtd-theme         = "^1"
 
 
 #########################################################################################
@@ -155,4 +155,4 @@ show_missing = true
 
 [tool.black]
 line-length = 100
-target-version = ["py38"]
+target-version = ["py39"]

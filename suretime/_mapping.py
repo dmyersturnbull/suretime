@@ -7,7 +7,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,39 +19,46 @@ Code that maps Windows timezones.
 """
 
 from __future__ import annotations
-from datetime import datetime, timezone
-import logging
-from pathlib import Path
-from typing import Optional, FrozenSet, Union
-from zoneinfo import ZoneInfo
-from copy import deepcopy
 
-from suretime._model import (
-    ZonedDatetime,
-    TaggedDatetime,
-    TaggedInterval,
-    TzMapType,
-    Duration,
-    GenericTimezone,
+import logging
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import FrozenSet, Optional, Type, Union
+from zoneinfo import ZoneInfo
+
+from suretime import SuretimeGlobals
+from suretime._cache import TimezoneMapBackend, TimezoneMapFilesysCache
+from suretime._errors import (
+    CannotMapTzError,
+    ClockMismatchError,
     DatetimeHasZoneError,
     MappedTzNotFoundError,
     MappedTzNotUniqueError,
-    CannotMapTzError,
-    DatetimeMissingZoneError,
-    InvalidIntervalError,
-    DatetimeParseError,
-    ExactTimezone,
 )
-from suretime._cache import TimezoneMapFilesysCache, TimezoneMapBackend
+from suretime._model import (
+    DatetimeMissingZoneError,
+    DatetimeParseError,
+    Duration,
+    ExactTimezone,
+    GenericTimezone,
+    InvalidIntervalError,
+    RepeatingDuration,
+    RepeatingInterval,
+    TaggedDatetime,
+    TaggedInterval,
+    TzMapType,
+    Ymdhmsun,
+    ZonedDatetime,
+)
 from suretime._utils import (
-    TzUtils,
     Clock,
-    ClockTime,
     ClockInfo,
-    SysTzInfo,
-    NtpTime,
+    ClockTime,
     NtpClockType,
     NtpContinents,
+    NtpTime,
+    SysTzInfo,
+    TzUtils,
 )
 
 logger = logging.getLogger("suretime")
@@ -69,7 +76,7 @@ class Zones:
         return frozenset(sorted(self._map.keys()))
 
     def only_local(
-        self, territory: Optional[str] = "primary", sys: bool = True, etc: bool = True
+        self, territory: Optional[str] = "primary", *, sys: bool = True, etc: bool = True
     ) -> ZoneInfo:
         dt = datetime.now(timezone.utc).astimezone()
         tz = dt.tzinfo.tzname(dt)
@@ -84,7 +91,7 @@ class Zones:
         return only
 
     def first_local(
-        self, territory: Optional[str] = "primary", sys: bool = True, etc: bool = True
+        self, territory: Optional[str] = "primary", *, sys: bool = True, etc: bool = True
     ) -> ZoneInfo:
         dt = datetime.now(timezone.utc).astimezone()
         tz = dt.tzinfo.tzname(dt)
@@ -99,7 +106,7 @@ class Zones:
         return first
 
     def all_local(
-        self, territory: Optional[str] = "primary", sys: bool = True, etc: bool = True
+        self, territory: Optional[str] = "primary", *, sys: bool = True, etc: bool = True
     ) -> FrozenSet[ZoneInfo]:
         dt = datetime.now(timezone.utc).astimezone()
         tz = dt.tzinfo.tzname(dt)
@@ -153,6 +160,7 @@ class Tagged:
     def now_local_sys(
         self,
         territory: Optional[str] = "primary",
+        *,
         only: bool = False,
         sys: bool = True,
         etc: bool = True,
@@ -164,9 +172,10 @@ class Tagged:
     def now_local_ntp(
         self,
         territory: Optional[str] = "primary",
+        *,
         only: bool = False,
         etc: bool = True,
-        server: str = "europe",
+        server: str = SuretimeGlobals.NTP_SERVER,
         kind: Union[str, NtpClockType] = NtpClockType.client_sent,
     ) -> TaggedDatetime:
         return self._get_now(
@@ -180,7 +189,7 @@ class Tagged:
 
     def now_utc_ntp(
         self,
-        ntp_server: str = "europe",
+        ntp_server: str = SuretimeGlobals.NTP_SERVER,
         ntp_clock: Union[str, NtpClockType] = NtpClockType.client_sent,
     ) -> TaggedDatetime:
         dt = datetime.now(timezone.utc)
@@ -191,12 +200,12 @@ class Tagged:
         clock_time = TzUtils.get_clock_time()
         info = zoned.tzinfo.tzname(zoned)
         if info is None:
-            raise DatetimeMissingZoneError(f"Datetime {zoned} is missing a zone")
+            raise DatetimeMissingZoneError(f"Datetime {zoned} has no zone")
         info = ZoneInfo(info)
         source = GenericTimezone(str(info), None, frozenset({info}))
         return TaggedDatetime(zoned, info, source, clock_time.nanos, clock_time.clock)
 
-    def _get(self, dt: datetime, territory: Optional[str], only: bool):
+    def _get(self, dt: datetime, territory: Optional[str], only: bool) -> TaggedDatetime:
         clock_time = TzUtils.get_clock_time()
         tz = dt.tzinfo.tzname(dt)
         matches = self._zones.all(tz, territory)
@@ -215,7 +224,7 @@ class Tagged:
         etc: bool,
         ntp_server: Optional[str],
         ntp_clock: Optional[str],
-    ):
+    ) -> TaggedDatetime:
         if ntp_server is not None:
             if ntp_clock is None:
                 raise AssertionError("ntp_attribute must be non-None if ntp_server is non-None")
@@ -232,6 +241,24 @@ class Tagged:
         return TaggedDatetime(local_now, iana, original, clock_time.nanos, clock_time.clock)
 
 
+class Clocks:
+    @classmethod
+    def sys(cls) -> ClockTime:
+        return TzUtils.get_clock_time()
+
+    @classmethod
+    def ntp(
+        cls,
+        *,
+        server: str = SuretimeGlobals.NTP_SERVER,
+        kind: Union[str, NtpClockType] = NtpClockType.client_sent,
+    ) -> ClockTime:
+        return TzUtils.get_ntp_clock(server, kind)
+
+    def ntp_raw(self, *, server: str = SuretimeGlobals.NTP_SERVER) -> NtpTime:
+        return TzUtils.get_ntp_time(server)
+
+
 class Errors:
     DatetimeParseError = DatetimeParseError
     TaggedDatetime = TaggedDatetime
@@ -239,10 +266,11 @@ class Errors:
     GenericTimezone = GenericTimezone
     ExactTimezone = ExactTimezone
     CannotMapTzError = CannotMapTzError
-    DatetimeAlreadyHasZoneError = DatetimeHasZoneError
+    DatetimeHasZoneError = DatetimeHasZoneError
     MappedTzNotFoundError = MappedTzNotFoundError
     MappedTzNotUniqueError = MappedTzNotUniqueError
     InvalidIntervalError = InvalidIntervalError
+    ClockMismatchError = ClockMismatchError
 
 
 class Types:
@@ -250,6 +278,8 @@ class Types:
     TaggedDatetime = TaggedDatetime
     TaggedInterval = TaggedInterval
     Duration = Duration
+    RepeatingDuration = RepeatingDuration
+    RepeatingInterval = RepeatingInterval
     Clock = Clock
     ClockTime = ClockTime
     ClockInfo = ClockInfo
@@ -258,21 +288,7 @@ class Types:
     NtpClockType = NtpClockType
     NtpContinents = NtpContinents
     Utils = TzUtils
-
-
-class Clocks:
-    @classmethod
-    def sys(cls) -> ClockTime:
-        return TzUtils.get_clock_time()
-
-    @classmethod
-    def ntp(
-        cls, server: str = "europe", kind: Union[str, NtpClockType] = NtpClockType.client_sent
-    ) -> ClockTime:
-        return TzUtils.get_ntp_clock(server, kind)
-
-    def ntp_raw(self, server: str = "europe") -> NtpTime:
-        return TzUtils.get_ntp_time(server)
+    Ymdhmsun = Ymdhmsun
 
 
 class TimezoneMap:
@@ -283,14 +299,9 @@ class TimezoneMap:
     Types = Types
     Errors = Errors
 
-    def mapping(self) -> TzMapType:
-        self._ensure()
-        return deepcopy(self._map)
-
     @property
-    def clocks(self) -> Clocks:
-        self._ensure()
-        return deepcopy(self._map)
+    def clocks(self) -> Type[Clocks]:
+        return Clocks
 
     @property
     def zones(self) -> Zones:
@@ -320,6 +331,7 @@ class TimezoneMaps:
     def cached(
         cls,
         path: Path = Path.home() / ".timezone-map.json",
+        *,
         expiration_mins: int = 43830,
     ) -> TimezoneMap:
         return TimezoneMap(TimezoneMapFilesysCache(path, expiration_mins))

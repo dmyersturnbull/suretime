@@ -7,7 +7,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+https://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,26 +20,27 @@ Code that performs initialization for suretime.
 
 from __future__ import annotations
 
-import enum
-import os
-import time
-import logging
 import decimal
+import enum
+import logging
+import os
+import platform
+import time
+from dataclasses import dataclass
 from datetime import timedelta
 from decimal import Decimal
-import platform
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
+from typing import FrozenSet, Optional, Union
 
 from ntplib import NTPClient
 
+from suretime._global import SuretimeGlobals
 
 logger = logging.getLogger("suretime")
 
 
 class NtpContinents:
-    known = frozenset(
+    known: FrozenSet[str] = frozenset(
         {
             "antarctica",
             "asia",
@@ -100,11 +101,15 @@ class NtpClockType(enum.Enum):
     server_sent = enum.auto()
     client_received = enum.auto()
 
+    @property
+    def name(self) -> str:
+        return self._name_.replace("_", "-")
+
     @classmethod
     def of(cls, clock: Union[str, NtpClockType]) -> NtpClockType:
         if isinstance(clock, NtpClockType):
             return clock
-        return cls[clock.lower().strip().replace("-", "_")]
+        return cls[clock.lower().strip().replace("-", "_").replace(" ", "_")]
 
 
 @dataclass(frozen=True, order=True, repr=True)
@@ -142,10 +147,15 @@ class ClockTime:
 
 class TzUtils:
     @classmethod
-    def get_ntp_clock(cls, server: str, attribute: Union[str, NtpClockType]) -> ClockTime:
+    def get_ntp_clock(
+        cls,
+        server: str = SuretimeGlobals.NTP_SERVER,
+        attribute: Union[str, NtpClockType] = NtpClockType.client_sent,
+    ) -> ClockTime:
         attribute = NtpClockType.of(attribute).name
-        data = cls.get_ntp_time(server)
-        epoch = cls.round_s_to_ns(getattr(data, attribute))
+        data = cls.get_ntp_time(server=server)
+        x = getattr(data, attribute.replace("-", "_"))
+        epoch = cls.round_s_to_ns(x)
         clock = Clock(
             f"{server}:{attribute}",
             None,
@@ -154,7 +164,7 @@ class TzUtils:
         return ClockTime(epoch, clock)
 
     @classmethod
-    def get_ntp_time(cls, server: str) -> NtpTime:
+    def get_ntp_time(cls, server: str = SuretimeGlobals.NTP_SERVER) -> NtpTime:
         server = NtpContinents.of(server)
         server = f"{server}.pool.ntp.org"
         client = NTPClient()
@@ -178,7 +188,15 @@ class TzUtils:
 
     @classmethod
     def get_clock_time(cls) -> ClockTime:
-        for name in ["boottime", "monotonic_raw"]:
+        clock = cls.get_clock()
+        if clock == Clock("monotonic_ns", None, None):
+            return ClockTime(time.monotonic_ns(), clock)
+        return ClockTime(time.clock_gettime_ns(clock.const), clock)
+
+    @classmethod
+    def get_clock(cls) -> Clock:
+        priorities = ["boottime", "monotonic_raw"]  # best first
+        for name in priorities:
             attr = f"CLOCK_{name.upper()}"
             if hasattr(time, attr):
                 clock = Clock.system(name, getattr(time, attr, name))
@@ -187,9 +205,8 @@ class TzUtils:
                     and clock.info.monotonic
                     and hasattr(time, "clock_gettime_ns")
                 ):
-                    return ClockTime(time.clock_gettime_ns(clock.const), clock)
-        clock = Clock("monotonic_ns", None, None)  # guaranteed for Python 3.5+
-        return ClockTime(time.monotonic_ns(), clock)
+                    return clock
+        return Clock("monotonic_ns", None, None)  # guaranteed for Python 3.5+
 
     @classmethod
     def get_offset_zone(cls) -> SysTzInfo:
