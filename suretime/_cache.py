@@ -26,17 +26,17 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import FrozenSet, Mapping, Optional, Sequence, Union
+from typing import Dict, FrozenSet, Mapping, Optional, Sequence, Union
 from urllib.request import urlopen
 from zoneinfo import ZoneInfo, available_timezones
 
 import defusedxml.ElementTree as Xml
 
-from suretime._model import TzDictType, TzMapType
-
 cldr_github_url = (
     "https://raw.githubusercontent.com/unicode-org/cldr/master/common/supplemental/windowsZones.xml"
 )
+TzMapType = Mapping[str, Mapping[str, FrozenSet[ZoneInfo]]]
+TzDictType = Dict[str, Dict[str, FrozenSet[ZoneInfo]]]
 
 logger = logging.getLogger("suretime")
 
@@ -140,4 +140,4 @@ class TimezoneMapFilesysCache(TimezoneMapBackend):
         return Path(self.source_xml).read_text(encoding="utf8")
 
 
-__all__ = ["TimezoneMapBackend", "TimezoneMapFilesysCache"]
+__all__ = ["TimezoneMapFilesysCache", "TimezoneMapBackend"]

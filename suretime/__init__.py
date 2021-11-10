@@ -5,7 +5,8 @@ Use as:
 
 .. code-block::
 
-  from suretime import TzMap
+  import suretime
+  suretime.zone.first_local()  # ZoneInfo["America/Los_Angeles"]
 
 Copyright 2021 Douglas Myers-Turnbull
 
@@ -25,26 +26,42 @@ permissions and limitations under the License.
 from datetime import datetime, timedelta, timezone
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import metadata as __load
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from suretime._cache import TimezoneMapBackend, TimezoneMapFilesysCache
 from suretime._global import SuretimeGlobals
-from suretime._mapping import TimezoneMap, TimezoneMaps
-from suretime._model import (
-    Duration,
-    RepeatingDuration,
-    RepeatingInterval,
-    TaggedDatetime,
-    TaggedInterval,
-    ZonedDatetime,
-)
-from suretime._setup import logger
+from suretime._mapping import TimezoneMaps
+from suretime._setup import UTC, logger
+from suretime._type import Errors as errors
+from suretime._type import Types as types
 
-pkg = Path(__file__).absolute().parent.name
+cache = TimezoneMaps.cached()
+clock = cache.clocks
+zone = cache.zones
+tag = cache.tagged
+utc = UTC
+
+ZoneInfo = ZoneInfo
+GenericTimezone = types.GenericTimezone
+TaggedDatetime = types.TaggedDatetime
+TaggedInterval = types.TaggedInterval
+ExactTimezone = types.ExactTimezone
+ZonedDatetime = types.ZonedDatetime
+RepeatingDuration = types.RepeatingDuration
+RepeatingInterval = types.RepeatingInterval
+Duration = types.Duration
+
+
+def get_ntp_continent() -> str:
+    return SuretimeGlobals.NTP_SERVER
+
+
+def set_ntp_continent(code: str) -> None:
+    SuretimeGlobals.NTP_SERVER = code
+
+
 metadata = None
 try:
-    metadata = __load(pkg)
+    metadata = __load("suretime")
     __status__ = "Development"
     __copyright__ = "Copyright 2021"
     __date__ = "2021-01-20"
@@ -57,38 +74,33 @@ try:
     __maintainer__ = metadata["maintainer"]
     __contact__ = metadata["maintainer"]
 except PackageNotFoundError:  # pragma: no cover
-    logger.error(f"Could not load package metadata for {pkg}. Is it installed?")
-
-
-Suretime = TimezoneMaps.cached()
-Types = Suretime.Types
-Errors = Suretime.Errors
+    logger.error("Could not load package metadata for suretime. Is it installed?")
 
 
 if __name__ == "__main__":  # pragma: no cover
     if metadata is not None:
-        print(f"{pkg} (v{metadata['version']})")
+        print(f"suretime (v{metadata['version']})")
     else:
-        print(f"Unknown project info for {pkg}")
+        print(f"Unknown project info for suretime")
+    my_zone = TimezoneMaps.non_cached()
+    print(my_zone.tagged.now_local_ntp(only=False))
 
 
 __all__ = [
-    "Suretime",
     "datetime",
     "timedelta",
     "timezone",
     "ZoneInfo",
-    "TimezoneMap",
-    "TimezoneMaps",
-    "TimezoneMapBackend",
-    "TimezoneMapFilesysCache",
-    "ZonedDatetime",
-    "TaggedDatetime",
-    "TaggedInterval",
+    "cache",
+    "clock",
+    "errors",
+    "tag",
+    "types",
+    "zone",
     "Duration",
-    "Types",
-    "Errors",
-    "SuretimeGlobals",
     "RepeatingDuration",
     "RepeatingInterval",
+    "TaggedDatetime",
+    "TaggedInterval",
+    "ZonedDatetime",
 ]

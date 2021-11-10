@@ -1,16 +1,16 @@
 import pytest
 
-from suretime import Suretime
+import suretime
 
 
 class TestInit:
     def test_zones(self):
-        assert str(Suretime.zones.only("Europe/Tiraspol")) == "Europe/Tiraspol"
-        assert str(Suretime.zones.only("Central Pacific Standard Time")) == "Pacific/Guadalcanal"
-        assert str(Suretime.zones.only("Central Pacific Standard Time", "AQ")) == "Antarctica/Casey"
+        assert str(suretime.zone.only("Europe/Tiraspol")) == "Europe/Tiraspol"
+        assert str(suretime.zone.only("Central Pacific Standard Time")) == "Pacific/Guadalcanal"
+        assert str(suretime.zone.only("Central Pacific Standard Time", "AQ")) == "Antarctica/Casey"
 
     def test_ntp(self):
-        t = Suretime.clocks.ntp()
+        t = suretime.clock.ntp()
         assert t.clock.name == "north-america:client-sent"
         assert t.clock.info.is_ntp
         assert t.clock.info.is_epoch

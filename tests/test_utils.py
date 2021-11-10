@@ -1,12 +1,12 @@
 import pytest
 
-from suretime._utils import NtpClockType, TzUtils
+from suretime._clock import NtpClockType, TzUtils
 
 
 class TestInit:
     def test_ntp(self):
         v = TzUtils.get_ntp_clock("north-america", NtpClockType.client_received)
-        assert v.clock.name == "north-america:client_received"
+        assert v.clock.name == "north-america:client-received"
 
     def test_sys(self):
         v = TzUtils.get_sys_zone()

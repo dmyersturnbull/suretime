@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from suretime._clock import Clock
 from suretime._model import *
 
 
@@ -48,7 +49,12 @@ class TestModel:
         assert dt3.is_identical_to(dt4)
 
     def test_interval(self):
-        TaggedInterval(TaggedDatetime.of())
+        x = datetime.now().astimezone(timezone.utc)
+        y = x + timedelta(microseconds=15)
+        start = TaggedDatetime.of(x, ZoneInfo("Etc/UTC"), 0, Clock.empty())
+        end = TaggedDatetime.of(y, ZoneInfo("Etc/UTC"), 1000, Clock.empty())
+        t = TaggedInterval(start, end)
+        assert t.wall_nanos == 15000
 
 
 if __name__ == "__main__":

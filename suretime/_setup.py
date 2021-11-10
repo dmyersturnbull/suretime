@@ -24,7 +24,7 @@ import logging
 import os
 from zoneinfo import ZoneInfo
 
-from suretime._utils import TzUtils
+from suretime._clock import TzUtils
 
 logger = logging.getLogger("suretime")
 _import_clock_time = TzUtils.get_clock_time()
@@ -52,4 +52,4 @@ except ImportError:
 UTC = ZoneInfo("Etc/UTC")
 
 
-__all__ = ["logger"]
+__all__ = ["logger", "UTC"]

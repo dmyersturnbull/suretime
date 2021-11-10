@@ -20,6 +20,7 @@ Code that performs initialization for suretime.
 
 from __future__ import annotations
 
+import dataclasses
 import decimal
 import enum
 import logging
@@ -34,6 +35,7 @@ from typing import FrozenSet, Optional, Union
 
 from ntplib import NTPClient
 
+from suretime._error import ZoneMismatchError
 from suretime._global import SuretimeGlobals
 
 logger = logging.getLogger("suretime")
@@ -77,6 +79,9 @@ class ClockInfo:
     server: Optional[str]
     is_epoch: bool
 
+    def copy(self, **kwargs) -> ClockInfo:
+        return dataclasses.replace(self, **kwargs)
+
 
 @dataclass(frozen=True, order=True, repr=True)
 class NtpTime:
@@ -93,6 +98,9 @@ class NtpTime:
     @property
     def round_trip(self) -> timedelta:
         return timedelta(seconds=self.client_received - self.client_sent)
+
+    def copy(self, **kwargs) -> NtpTime:
+        return dataclasses.replace(self, **kwargs)
 
 
 class NtpClockType(enum.Enum):
@@ -119,6 +127,10 @@ class Clock:
     info: Optional[ClockInfo]
 
     @classmethod
+    def empty(cls) -> Clock:
+        return Clock("clock", None, None)
+
+    @classmethod
     def system(cls, name: str, const: int) -> Clock:
         if name == "boottime":
             info = ClockInfo(False, None, True, None, False, None, False)
@@ -138,11 +150,17 @@ class Clock:
                 info = None
         return Clock(name, const, info)
 
+    def copy(self, **kwargs) -> Clock:
+        return dataclasses.replace(self, **kwargs)
+
 
 @dataclass(frozen=True, order=True, repr=True)
 class ClockTime:
     nanos: int
     clock: Clock
+
+    def copy(self, **kwargs) -> ClockTime:
+        return dataclasses.replace(self, **kwargs)
 
 
 class TzUtils:
@@ -242,7 +260,7 @@ class TzUtils:
                 pass
         from_env = os.environ.get("TZ")
         if from_env is not None and from_path is not None and from_env != from_path:
-            raise ValueError(
+            raise ZoneMismatchError(
                 f"Contradictory system timezones {from_path} from {path} and {from_env} from $TZ"
             )
         if from_path is not None:
@@ -270,12 +288,12 @@ class TzUtils:
 
 
 __all__ = [
-    "TzUtils",
     "Clock",
     "ClockInfo",
     "ClockTime",
-    "SysTzInfo",
-    "NtpTime",
     "NtpClockType",
     "NtpContinents",
+    "NtpTime",
+    "SysTzInfo",
+    "TzUtils",
 ]
