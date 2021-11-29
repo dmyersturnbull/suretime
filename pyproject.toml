@@ -57,7 +57,7 @@ bandit                   = "^1.7"
 flake8                   = "^4"
 flake8-bugbear           = ">=21.9.2"
 flake8-docstrings        = "^1.6"
-nbqa                     = "^1.1"
+nbqa                     = "^1.2"
 pytest                   = "^6"
 coverage                 = {extras = ["toml"], version = "^6"}
 pytest-cov               = "^3"
