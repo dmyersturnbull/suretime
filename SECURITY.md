@@ -1,15 +1,6 @@
 # Security policy
 
-<!--- This was modified from an example file provided by Github ---> 
-
-## Supported versions
-
-These versions of suretime are supported.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.0   | :white_check_mark: |
-
+<!--- This was modified from an example file provided by Github --->
 
 ## How to report a vulnerability
 

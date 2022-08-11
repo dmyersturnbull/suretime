@@ -83,6 +83,7 @@ class InvalidIntervalError(SuretimeValueError):
 
 __all__ = [
     "CannotMapTzError",
+    "ClockMismatchError",
     "DatetimeHasZoneError",
     "DatetimeMissingZoneError",
     "DatetimeParseError",
