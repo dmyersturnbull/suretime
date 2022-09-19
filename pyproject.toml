@@ -60,7 +60,7 @@ flake8-comprehensions    = "^3"
 flake8-docstrings        = "^1.6"
 flake8-simplify          = "^0.19"
 coverage                 = {version = "^6", extras = ["toml"]}
-nbqa                     = "^1.4"
+nbqa                     = "^1.5"
 pre-commit               = "^2.20"
 pytest                   = "^7"
 pytest-cov               = "^3"
