@@ -54,7 +54,7 @@ ntplib                   = ">=0.4, <1.0"
 
 [tool.poetry.dev-dependencies]
 bandit                   = "^1.7"
-flake8                   = "^4"
+flake8                   = "^6"
 flake8-bugbear           = ">=22"
 flake8-comprehensions    = "^3"
 flake8-docstrings        = "^1.6"
