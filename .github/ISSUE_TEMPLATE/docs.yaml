@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to CICD
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/cicd
+# SPDX-License-Identifier: Apache-2.0
+
+name: "Documentation"
+title: "📚 Documentation"
+description: "Documentation issue"
+labels: ["type: docs"]
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs work?
+      placeholder: Describe the documentation issue.
+    validations:
+      required: true

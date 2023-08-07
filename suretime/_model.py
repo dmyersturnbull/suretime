@@ -1,19 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2021-2023, Contributors to Suretime
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/suretime
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Model classes for suretime.
-
-Copyright 2021 Douglas Myers-Turnbull
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-or implied. See the License for the specific language governing
-permissions and limitations under the License.
 
 Model and utility classes for suretime.
 """
@@ -24,10 +14,10 @@ import dataclasses
 import decimal
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 from functools import cached_property, total_ordering
-from typing import Generator, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 from zoneinfo import ZoneInfo
 
 from suretime._clock import Clock, ClockTime
@@ -39,6 +29,9 @@ from suretime._error import (
     ZoneMismatchError,
 )
 from suretime._generic_zone import GenericTimezone
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 ROUNDING = decimal.ROUND_HALF_DOWN
 _pat = re.compile(r"^ *([^[]+)\[([/A-Za-z0-9_\-+]+)] *$")
@@ -64,15 +57,17 @@ class Ymdhmsun(NamedTuple):
 class AbstractZonedDatetime:
     dt: datetime
     zone: ZoneInfo
-    source: Optional[GenericTimezone]
+    source: GenericTimezone | None
 
     def __post_init__(self):
         if self.dt.tzname() is None:
-            raise DatetimeMissingZoneError(f"Cannot make {self} from an unaware datetime")
+            msg = f"Cannot make {self} from an unaware datetime"
+            raise DatetimeMissingZoneError(msg)
         name1 = self.dt.tzinfo.tzname(self.dt)
         name2 = self.zone.tzname(self.dt)
         if name1 != name2:
-            raise ZoneMismatchError(f"{self.dt} has zone {name1} != {name2} from ZoneInfo")
+            msg = f"{self.dt} has zone {name1} != {name2} from ZoneInfo"
+            raise ZoneMismatchError(msg)
 
     def copy(self, **kwargs) -> AbstractZonedDatetime:
         return dataclasses.replace(self, **kwargs)
@@ -87,7 +82,7 @@ class AbstractZonedDatetime:
         s = abs(offset.total_seconds())
         if s == 0:
             return "Z"
-        sgn = "−" if offset.total_seconds() < 0 else "+"
+        sgn = "-" if offset.total_seconds() < 0 else "+"
         hours = int(s / 3600)
         minutes = int(s / 60 % 60)
         seconds = int(s % 3600)
@@ -113,7 +108,7 @@ class AbstractZonedDatetime:
 
     @property
     def utc(self) -> AbstractZonedDatetime:
-        dt = self.dt.astimezone(tz=timezone.utc)
+        dt = self.dt.astimezone(tz=UTC)
         return AbstractZonedDatetime(dt, ZoneInfo(dt.tzname()), self.source)
 
     def __eq__(self, other):
@@ -128,32 +123,37 @@ class AbstractZonedDatetime:
     def __sub__(self, delta):
         raise NotImplementedError()
 
-    def _to_utc(self, other: Union[datetime, AbstractZonedDatetime]) -> datetime:
+    def _to_utc(self, other: datetime | AbstractZonedDatetime) -> datetime:
         if isinstance(other, datetime):
             if other.tzinfo is None:
-                raise DatetimeMissingZoneError("Cannot compare zoned and non-zoned datetimes")
-            return other.astimezone(tz=timezone.utc)
+                msg = "Cannot compare zoned and non-zoned datetimes"
+                raise DatetimeMissingZoneError(msg)
+            return other.astimezone(tz=UTC)
         elif isinstance(other, AbstractZonedDatetime):
-            return other.dt.astimezone(tz=timezone.utc)
+            return other.dt.astimezone(tz=UTC)
         else:
-            raise TypeError(f"Cannot compare type {type(other)} to zoned datetime")
+            msg = f"Cannot compare type {type(other)} to zoned datetime"
+            raise TypeError(msg)
 
 
 @dataclass(frozen=True, repr=True)
 class ZonedDatetime(AbstractZonedDatetime):
     @classmethod
     def now_utc(cls) -> ZonedDatetime:
-        return ZonedDatetime.of(datetime.now().astimezone(timezone.utc), timezone.utc, source=None)
+        return ZonedDatetime.of(datetime.now().astimezone(UTC), UTC, source=None)
 
     @classmethod
-    def now(cls, zone: Union[ZoneInfo, str]) -> ZonedDatetime:
+    def now(cls, zone: ZoneInfo | str) -> ZonedDatetime:
         if isinstance(zone, str):
             zone = ZoneInfo(zone)
         return ZonedDatetime.of(datetime.now().astimezone(zone), zone, source=None)
 
     @classmethod
     def of(
-        cls, dt: datetime, zone: Union[ZoneInfo, str], source: Optional[GenericTimezone] = None
+        cls,
+        dt: datetime,
+        zone: ZoneInfo | str,
+        source: GenericTimezone | None = None,
     ) -> ZonedDatetime:
         if isinstance(zone, str):
             zone = ZoneInfo(zone)
@@ -167,7 +167,8 @@ class ZonedDatetime(AbstractZonedDatetime):
         """
         match = _pat.fullmatch(s)
         if match is None:
-            raise DatetimeParseError(f"Could not parse {s} to zoned datetime")
+            msg = f"Could not parse {s} to zoned datetime"
+            raise DatetimeParseError(msg)
         raw_dt, zone = match.group(1), match.group(2)
         zone = ZoneInfo(zone)
         dt = raw_dt.replace("Z", "+00:00").strip().replace(" ", "T").replace(",", ".")
@@ -182,10 +183,10 @@ class ZonedDatetime(AbstractZonedDatetime):
         them = (other.dt, other.source, other.zone)
         return us == them
 
-    def __eq__(self, other: Union[datetime, ZonedDatetime]):
+    def __eq__(self, other: datetime | ZonedDatetime):
         return self.utc.dt == self._to_utc(other)
 
-    def __lt__(self, other: Union[datetime, ZonedDatetime]):
+    def __lt__(self, other: datetime | ZonedDatetime):
         return self.utc.dt < self._to_utc(other)
 
     def __add__(self, delta: timedelta) -> ZonedDatetime:
@@ -208,10 +209,10 @@ class TaggedDatetime(AbstractZonedDatetime):
     def of(
         cls,
         dt: datetime,
-        zone: Union[ZoneInfo, str],
+        zone: ZoneInfo | str,
         clock_ns: int,
         clock: Clock,
-        source: Optional[GenericTimezone] = None,
+        source: GenericTimezone | None = None,
     ) -> TaggedDatetime:
         if isinstance(zone, str):
             zone = ZoneInfo(zone)
@@ -222,8 +223,8 @@ class TaggedDatetime(AbstractZonedDatetime):
 
     @property
     def utc(self) -> TaggedDatetime:
-        dt = self.dt.astimezone(timezone.utc)
-        return TaggedDatetime(dt, timezone.utc, self.source, self.clock_ns, self.clock)
+        dt = self.dt.astimezone(UTC)
+        return TaggedDatetime(dt, UTC, self.source, self.clock_ns, self.clock)
 
     @property
     def clock_time(self) -> ClockTime:
@@ -235,7 +236,7 @@ class TaggedDatetime(AbstractZonedDatetime):
         return self.clock_ns / 1e9
 
     @property
-    def use_clock_as_dt(self) -> Optional[TaggedDatetime]:
+    def use_clock_as_dt(self) -> TaggedDatetime | None:
         """
         Returns a new TaggedDatetime that uses this *clock* as the main datetime.
         Requires that ``self.clock.info.is_epoch`` is true.
@@ -248,8 +249,8 @@ class TaggedDatetime(AbstractZonedDatetime):
             A new TaggedDatetime, or None
         """
         if self.clock.info.is_epoch:
-            dt = datetime.fromtimestamp(self.clock_sec, timezone.utc)
-            return TaggedDatetime(dt, timezone.utc, None, self.clock_ns, self.clock)
+            dt = datetime.fromtimestamp(self.clock_sec, UTC)
+            return TaggedDatetime(dt, UTC, None, self.clock_ns, self.clock)
         return None
 
     def to(self, end: TaggedDatetime) -> TaggedInterval:
@@ -261,7 +262,8 @@ class TaggedDatetime(AbstractZonedDatetime):
 
         """
         if clock.clock != self.clock:
-            raise ClockMismatchError(f"Clock {clock.clock.name} is not {self.clock.name}")
+            msg = f"Clock {clock.clock.name} is not {self.clock.name}"
+            raise ClockMismatchError(msg)
         return self.at_nanos(clock.nanos)
 
     def at_nanos(self, ns: int) -> TaggedDatetime:
@@ -302,7 +304,8 @@ class _Duration:
 
     def __post_init__(self):
         if self.microseconds < 0:
-            raise ValueError(f"Duration {self} is negative")
+            msg = f"Duration {self} is negative"
+            raise ValueError(msg)
 
     @property
     def microseconds(self) -> int:
@@ -336,7 +339,7 @@ class _Duration:
         if t.Y > 0:
             return f"{t.Y} years"
         if t.M > 0:
-            return f"{t.M} month"
+            return f"{t.M} months"
         if t.D > 0:
             return f"{t.D} days"
         if t.h > 0:
@@ -378,7 +381,7 @@ class _Duration:
 class Duration(_Duration):
     """"""
 
-    def repeat(self, n_events: Optional[int] = None) -> RepeatingDuration:
+    def repeat(self, n_events: int | None = None) -> RepeatingDuration:
         return RepeatingDuration(self._start, self._end, n_events)
 
     def copy(self, **kwargs) -> Duration:
@@ -417,7 +420,7 @@ class Duration(_Duration):
 @total_ordering
 @dataclass(frozen=True)
 class RepeatingDuration(_Duration):
-    _n_events: Optional[int]
+    _n_events: int | None
 
     def copy(self, **kwargs) -> RepeatingDuration:
         return dataclasses.replace(self, **kwargs)
@@ -427,7 +430,7 @@ class RepeatingDuration(_Duration):
         return self.n_events is not None
 
     @property
-    def n_events(self) -> Optional[int]:
+    def n_events(self) -> int | None:
         if self._n_events == -1:
             return None
         return self._n_events
@@ -525,8 +528,9 @@ class RepeatingInterval(RepeatingDuration):
         return self.copy(_end=self._start + self.delta / scale)
 
     def __getitem__(
-        self, event: Union[int, slice]
-    ) -> Union[AbstractZonedDatetime, RepeatingInterval]:
+        self,
+        event: int | slice,
+    ) -> AbstractZonedDatetime | RepeatingInterval:
         if isinstance(event, slice):
             return self.slice(event.start, event.stop, event.step)
         return self.event(event)
@@ -547,11 +551,13 @@ class TaggedInterval:
         # Most importantly, this catches cases where the clock reset
         # This could happen after a system restart
         if self.start.utc > self.end.utc:
-            raise InvalidIntervalError(f"Start {self.start} is after {self.end}.")
+            msg = f"Start {self.start} is after {self.end}."
+            raise InvalidIntervalError(msg)
         start_ns, end_ns = self.start.clock_ns, self.end.clock_ns
         if start_ns > end_ns:
+            msg = f"Clock times for {self.start} and {self.end} are reversed: {start_ns} > {end_ns}"
             raise InvalidIntervalError(
-                f"Clock times for {self.start} and {self.end} are reversed: {start_ns} > {end_ns}"
+                msg,
             )
 
     def copy(self, **kwargs) -> TaggedInterval:
@@ -585,7 +591,8 @@ class TaggedInterval:
 
     def round_real(self, exponent: int) -> int:
         if exponent not in {1, 1e3, 1e6, 1e9}:
-            raise ValueError(f"Bad exponent {exponent}")
+            msg = f"Bad exponent {exponent}"
+            raise ValueError(msg)
         scale = Decimal(1e9 / exponent)
         nanos = Decimal(self.end.clock_ns) - Decimal(self.start.clock_ns)
         downsized = nanos / scale
@@ -602,7 +609,7 @@ class TaggedInterval:
     def duration(self) -> Duration:
         return Duration(self.start.dt, self.end.dt)
 
-    def repeat(self, n_events: Optional[int] = None) -> RepeatingInterval:
+    def repeat(self, n_events: int | None = None) -> RepeatingInterval:
         return RepeatingInterval(self.start.dt, self.end.dt, n_events, self.start)
 
     def __str__(self) -> str:

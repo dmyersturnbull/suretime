@@ -1,4 +1,8 @@
-from datetime import datetime, timedelta, timezone
+# SPDX-FileCopyrightText: Copyright 2021-2023, Contributors to Suretime
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/suretime
+# SPDX-License-Identifier: Apache-2.0
+
+from datetime import UTC, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -18,7 +22,7 @@ class TestModel:
         dt = ZonedDatetime.now_utc()
         assert dt.offset_str == "Z"
         dt = ZonedDatetime.now(ZoneInfo("America/Los_Angeles"))
-        assert dt.offset_str == "−08:00"
+        assert dt.offset_str == "-08:00"
 
     def test_add(self):
         dt0 = ZonedDatetime.now_utc()
@@ -36,11 +40,11 @@ class TestModel:
         assert dt0 < dt1
 
     def test_eq_zdt(self):
-        x = datetime.now().astimezone(timezone.utc)
-        dt1 = ZonedDatetime.of(x, timezone.utc)
-        dt2 = ZonedDatetime.of(x, timezone.utc, source=GenericTimezone.of("nope"))
-        dt3 = ZonedDatetime.of(x, timezone.utc, source=GenericTimezone.of("other"))
-        dt4 = ZonedDatetime.of(x, timezone.utc, source=GenericTimezone.of("other"))
+        x = datetime.now().astimezone(UTC)
+        dt1 = ZonedDatetime.of(x, UTC)
+        dt2 = ZonedDatetime.of(x, UTC, source=GenericTimezone.of("nope"))
+        dt3 = ZonedDatetime.of(x, UTC, source=GenericTimezone.of("other"))
+        dt4 = ZonedDatetime.of(x, UTC, source=GenericTimezone.of("other"))
         assert dt1 == dt2
         assert dt1 == dt3
         assert not dt1.is_identical_to(dt2)
@@ -49,7 +53,7 @@ class TestModel:
         assert dt3.is_identical_to(dt4)
 
     def test_interval(self):
-        x = datetime.now().astimezone(timezone.utc)
+        x = datetime.now().astimezone(UTC)
         y = x + timedelta(microseconds=15)
         start = TaggedDatetime.of(x, ZoneInfo("Etc/UTC"), 0, Clock.empty())
         end = TaggedDatetime.of(y, ZoneInfo("Etc/UTC"), 1000, Clock.empty())

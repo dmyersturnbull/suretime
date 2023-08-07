@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to CICD
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/cicd
+# SPDX-License-Identifier: Apache-2.0
+
+name: "Feature"
+title: "✨ Feature"
+description: "Feature request"
+labels: ["type: feature"]
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What is the feature request?
+      placeholder: Describe the feature you would like.
+    validations:
+      required: true

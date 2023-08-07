@@ -1,19 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2021-2023, Contributors to Suretime
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/suretime
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Model classes for suretime.
-
-Copyright 2021 Douglas Myers-Turnbull
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-or implied. See the License for the specific language governing
-permissions and limitations under the License.
 
 Model and utility classes for suretime.
 """
@@ -22,8 +12,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import cached_property
-from typing import AbstractSet, FrozenSet, Optional
-from zoneinfo import ZoneInfo
+from typing import TYPE_CHECKING, AbstractSet, FrozenSet, Optional
+
+if TYPE_CHECKING:
+    from zoneinfo import ZoneInfo
 
 
 @dataclass(frozen=True, repr=True, order=True)
@@ -41,15 +33,15 @@ class GenericTimezone:
     """
 
     name: str
-    territory: Optional[str]
-    ianas: FrozenSet[ZoneInfo]
+    territory: str | None
+    ianas: frozenset[ZoneInfo]
 
     @classmethod
     def of(
         cls,
         name: str,
-        territory: Optional[str] = "primary",
-        ianas: Optional[AbstractSet[ZoneInfo]] = None,
+        territory: str | None = "primary",
+        ianas: AbstractSet[ZoneInfo] | None = None,
     ) -> GenericTimezone:
         if ianas is None:
             ianas = frozenset()

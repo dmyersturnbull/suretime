@@ -1,19 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2021-2023, Contributors to Suretime
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/suretime
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Formatting of datetimes.
-
-Copyright 2021 Douglas Myers-Turnbull
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-or implied. See the License for the specific language governing
-permissions and limitations under the License.
 
 Model and utility classes for suretime.
 """
@@ -67,7 +57,12 @@ class DatetimeFormats:
 
     @classmethod
     def format_filesys(
-        cls, dt: datetime, *, offset: bool = True, micros: bool = True, short: bool = True
+        cls,
+        dt: datetime,
+        *,
+        offset: bool = True,
+        micros: bool = True,
+        short: bool = True,
     ) -> str:
         fmt = DatetimeFormats.filesys_short if short else DatetimeFormats.filesys_long
         fmt += (".%i" if micros else "") + ("%z" if offset else "")
@@ -75,7 +70,12 @@ class DatetimeFormats:
 
     @classmethod
     def format_pretty(
-        cls, dt: datetime, *, offset: bool = True, micros: bool = True, space: str = " "
+        cls,
+        dt: datetime,
+        *,
+        offset: bool = True,
+        micros: bool = True,
+        space: str = " ",
     ) -> str:
         fmt = DatetimeFormats.pretty
         fmt += (".%i" if micros else "") + ("%z" if offset else "")

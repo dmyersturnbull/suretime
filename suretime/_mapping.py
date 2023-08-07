@@ -1,19 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2021-2023, Contributors to Suretime
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/suretime
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Main code for suretime.
-
-Copyright 2021 Douglas Myers-Turnbull
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-or implied. See the License for the specific language governing
-permissions and limitations under the License.
 
 Code that maps Windows timezones.
 """
@@ -23,10 +13,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
+import platformdirs
+
 from suretime import SuretimeGlobals
 from suretime._cache import TimezoneMapBackend, TimezoneMapFilesysCache
 from suretime._clock import ClockTime, NtpClockType, NtpTime, TzUtils
 from suretime._zone import Tagged, Zones
+
+DEFAULT_CACHE_DIR = platformdirs.user_cache_path("suretime")
 
 
 class Clocks:
@@ -37,27 +31,28 @@ class Clocks:
         self,
         *,
         server: str = SuretimeGlobals.NTP_SERVER,
-        kind: Union[str, NtpClockType] = NtpClockType.client_sent,
+        kind: str | NtpClockType = NtpClockType.client_sent,
     ) -> ClockTime:
         return TzUtils.get_ntp_clock(server, kind)
 
     def ntp_raw(self, *, server: str = SuretimeGlobals.NTP_SERVER) -> NtpTime:
         return TzUtils.get_ntp_time(server)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__class__.__name__
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__class__.__name__
 
     def __eq__(self, other: Clocks):
         if not isinstance(other, Clocks):
-            raise TypeError(f"Cannot compare {type(other)}")
+            msg = f"Cannot compare {type(other)}"
+            raise TypeError(msg)
         return True
 
 
 class TimezoneMap:
-    def __init__(self, cache: TimezoneMapBackend):
+    def __init__(self, cache: TimezoneMapBackend) -> None:
         self._cache = cache
         self._map = None
 
@@ -82,7 +77,7 @@ class TimezoneMap:
     @classmethod
     def new_cached(
         cls,
-        path: Path = Path.home() / ".timezone-map.json",
+        path: Path = DEFAULT_CACHE_DIR,
         expiration_mins: int = 43830,
     ) -> TimezoneMap:
         return TimezoneMap(TimezoneMapFilesysCache(path, expiration_mins))

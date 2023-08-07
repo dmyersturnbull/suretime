@@ -1,11 +1,15 @@
 # Various static code analysis and checks
-# Runs on a schedule (weekly)
-name: check
+# Runs on commit or pull (to any branch)
+# and on a schedule (weekly)
+name: Static checks
 on:
+  push:
+    branches: [main]
+  pull_request:
   schedule:
-    - cron: 0 7 * * 6
+    - cron: "0 7 * * 6"
 jobs:
-  analyze:
+  analyse:
     name: Analyze with CodeQL
     runs-on: ubuntu-latest
     steps:

@@ -1,157 +1,316 @@
-[metadata]
-description-file = "README.md"
+# SPDX-FileCopyrightText: Copyright 2020-2023, Contributors to Suretime
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/suretime
+# SPDX-License-Identifier: Apache-2.0
 
+###################
+# build-system
+###################
 [build-system]
-requires = ["poetry>=1.1,<2", "virtualenv==20.0.33", "wheel>=0.36,<1.0"]
-build-backend = "poetry.masonry.api"
+requires = ["hatchling~=1.7"]
+build-backend = "hatchling.build"
 
 
-#########################################################################################
-# Poetry metadata
-#########################################################################################
+###################
+# Project
+###################
 
-[tool.poetry]
-
+[project]
 name = "suretime"
-version = "0.2.1"
-
-description = "Handle IANA timezones and fully resolved timestamps and intervals on all platforms"
-keywords = ["timezone", "zoneinfo", "datetime", "timestamp"]
-authors = ["Douglas Myers-Turnbull"]
-maintainers = ["Douglas Myers-Turnbull"]
-license = "Apache-2.0"
-readme = "README.md"
-homepage = "https://github.com/dmyersturnbull/suretime"
-repository = "https://github.com/dmyersturnbull/suretime"
-documentation = "https://suretime.readthedocs.io"
+requires-python = "~=3.11"
+readme = {file = "README.md", content-type = "text/markdown"}
+version = "0.3.0-alpha0"
+description = "CI/CD test repo."
+maintainers = [
+  {name="Douglas Myers-Turnbull", email=" dmyersturnbull@gmail.com"}
+]
+authors = [
+  {name="Douglas Myers-Turnbull", email=" dmyersturnbull@gmail.com"}
+]
+license = {text="Apache-2.0"}
+keywords = ["python", "ci/cd"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Natural Language :: English",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-	"Intended Audience :: Developers",
-    "Operating System :: OS Independent",
-    "Topic :: Software Development :: Libraries :: Python Modules"
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3 :: Only",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Environment :: Console",
+  "Topic :: Software Development :: Build Tools",
+]
+dependencies = [
+  "typer[all]         ~=0.9",
+  "defusedxml         >=0.7,<1.0",
+  "ntplib             >=0.4, <1.0",
 ]
 
-[tool.poetry.urls]
-CI = "https://github.com/dmyersturnbull/suretime/actions"
-Issues = "https://github.com/dmyersturnbull/suretime/issues"
+#===== URLs =====#
+[project.urls]
+# :tyranno: "https://github.com/${.frag}"
+Homepage = "https://github.com/dmyersturnbull/suretime"
+# :tyranno: "https://github.com/${.frag}"
+Source = "https://github.com/dmyersturnbull/suretime"
+# :tyranno: https://${.frag}.readthedocs.io
+Documentation = "https://suretime.readthedocs.io"
+# :tyranno: ${.home}/issues
+Tracker = "https://github.com/dmyersturnbull/suretime/issues"
+# :tyranno: https://pypi.org/project/${project.name}
 Download = "https://pypi.org/project/suretime/"
+# :tyranno: ${.home}/blob/main/CHANGELOG.md
 Changelog = "https://github.com/dmyersturnbull/suretime/blob/main/CHANGELOG.md"
 
 
-#########################################################################################
-# Poetry build & dependencies
-#########################################################################################
+###################
+# Hatch
+###################
 
-[tool.poetry.dependencies]
-python                   = "^3.9"
-defusedxml               = ">=0.7, <1.0"
-ntplib                   = ">=0.4, <1.0"
-
-[tool.poetry.dev-dependencies]
-bandit                   = "^1.7"
-flake8                   = "^4"
-flake8-bugbear           = ">=22"
-flake8-comprehensions    = "^3"
-flake8-docstrings        = "^1.6"
-flake8-simplify          = "^0.19"
-coverage                 = {version = "^6", extras = ["toml"]}
-nbqa                     = "^1.4"
-pre-commit               = "^2.20"
-pytest                   = "^7"
-pytest-cov               = "^3"
-
-
-#########################################################################################
-# Tyrannosaurus
-#########################################################################################
-
-[tool.tyrannosaurus.options]
-sort     = true
-align    = true
-
-[tool.tyrannosaurus.sources]
-
-# --- VERSIONS ---
-pycompatversions   = "tool.poetry.dependencies"
-pytoxversions      = "tool.poetry.dependencies"
-pymetaversion      = "'3.9'"
-
-# --- DEVELOPMENT PARAMS ---
-metavm             = "'ubuntu-latest'"
-devdeps            = "tool.poetry.dev-dependencies"
-
-# --- PROJECT INFO ---
-status             = "'Development'"
-date               = "'2021-01-20'"
-copyright          = "'Copyright 2021'"
-version            = "tool.poetry.version"
-release            = "tool.poetry.version"
-long_description   = "tool.poetry.description"
-
-# --- AUTHORS ---
-authors            = [
-    "Douglas Myers-Turnbull <github:dmyersturnbull,orcid:0000-0003-3610-4808>"
+[tool.hatch.envs.default]
+dependencies = [
+  "pre-commit           ~=3.3",
+  "hypothesis           ~=6.0",
+  "pytest               ~=7.0",
+  "tzdata               >=2023",
+  "coverage[toml]       ~=7.0",
+  "pytest-cov           ~=3.0",
+  "mypy                 ~=1.4",
+  "ruff                 >=0.0.280",
+  "mkdocs               ~=1.5",
+  "mkdocs-material      ~=9.1",
+  "mkdocs-minify-plugin ~=0.7",
+  "mkdocstrings[python] >=0.20",
 ]
-contributors = [ ]
-maintainers = "tool.tyrannosaurus.sources.authors"
+#skip-install = true
 
-# --- CODING STYLE ---
-linelength         = "tool.black.line-length"
-importorderstyle   = "'google'"
-docstringstyle     = "'google'"
-
-
-# --- CODING STYLE IN PEP8 ---
-[tool.tyrannosaurus.sources.flake8skip]
-all    = "'W503,E203,E225,E301,E302,E501,D107,D200,D205,D400,D403,D409,D410,D411,D212,W391,W293'"
-test   = "'D100,D101,D102,D103,D104,S101,W503,E203,E225,E301,E302,E501,D107,D200,D205,D400,D403,D409,D410,D411,D212,W391,W293'"
-
-
-[tool.tyrannosaurus.targets]
-pyproject    = true
-init         = true
-tox          = true
-precommit    = true
-docs         = true
-recipes      = true
-license      = true
-authors      = true
-github       = true
-travis       = true
-readme       = true
-changelog    = true
-environment  = true
+[tool.hatch.envs.default.scripts]
+test = [
+  "pytest tests/",
+]
+bandit = [
+  "ruff --select S {args:.}",
+]
+lint = [
+  "ruff {args:.}",
+  "mypy --non-interactive {args:src/suretime tests}"
+]
+fmt = [
+  "black {args:.}",
+  "ruff --fix-only {args:.}",
+]
+clean = [
+  "tyranno clean"
+]
+build-docs = [
+  "mkdocs build"
+]
+serve-docs = [
+  "mkdocs serve"
+]
 
 
-#########################################################################################
-# Testing
-#########################################################################################
+###################
+# Ruff
+###################
 
+[tool.ruff]
+line-length = 120
+include = [
+  "*.py",            # Source
+  "*.pyi",           # Compiled
+  "pyproject.toml",  # This (RUF checks)
+  "*.ipynb"          # Jupyter notebooks
+]
+select = [
+  "A",        # flake8-builtins
+  "ANN",      # flake8-annotations
+  "ASYNC",    # flake8-async
+  "B",        # flake8-bugbear
+  "BLE",      # flake8-blind-exception
+  "C",        # flake8-comprehensions
+  "COM",      # flake8-commas
+  "DTZ",      # flake8-datetimez
+  "EM",       # flake8-errmsg
+  "F",        # pyflakes
+  "FA",       # flake8-future-annotations
+  "E",        # flake8 errors (most fixed by black; rest are nitpicky)
+  "G",        # flake8-logging-concat
+  "I",        # isort
+  "INP",      # flake8-no-pep420
+  "ISC",      # flake8-implicit-str-concat
+  "N",        # flake8-naming
+  "NPY",      # numpy-specific rules
+  "PERF",     # perflint
+  "PGH",      # pygrep-hooks
+  "PIE",      # flake8-pie
+  "PL",       # pylint
+  "PTH",      # flake8-use-pathlib
+  "Q",        # flake8-quotes
+  "RUF",      # Ruff-specific tests
+  "S",        # bandit
+  "SIM",      # flake8-simplify
+  "SLOT",     # flake8-slots
+  "T10",      # debugger
+  "TCH",      # flake8-type-checking
+  "TID",      # flake8-tidy-imports (mostly bans relative imports)
+  "UP",       # pyupgrade
+  "W",        # warnings (most fixed by Black, but W605 is invalid escape char)
+  "YTT",      # flake8-2020 (unlikely problematic checks for Python version)
+  "RUF"       # Ruff-specific rules
+]
+exclude = [
+  "ARG",      # flake8-unused (unused parameters are almost always intentional, like when overriding)
+  "FBT",      # flake8-boolean-trap (debatable, and might not have a choice)
+  "ICN",      # flake8-import-conventionals (isort does this)
+]
+ignore = [
+  "INP001",   # missing __init__ -- false positives
+  "B027",     # Allow non-abstract empty methods in abstract base classes
+  "FBT003",   # Allow boolean positional values in function calls, like `dict.get(... True)`
+  "C901",     # Ignore complexity:
+  "PLR0911",
+  "PLR0912",
+  "PLR0913",
+  "PLR0915",
+  "D107",     # Missing docstring in __init__ (put in class docstring)
+  "D212",     # Multi-line docstring start (contradictory)
+  "E203",     # Colons with space before (sometimes useful expand)
+  "E225",     # Missing whitespace around operator (sometimes useful to condense)
+  "E501",     # Line > 79 chars (we use black)
+]
+unfixable = [
+  "F401",     # Don't touch unused imports
+  "RUF100",   # Unused noqa (should fix manually)
+]
+flake8-bandit.check-typed-exception = true
+pydocstyle.convention = "google"
+isort.known-first-party = ["suretime"]
+flake8-tidy-imports.ban-relative-imports = "all"
+
+[tool.ruff.per-file-ignores]
+"tests/**/*" = [
+  "INP001",   # missing __init__
+  "PLR2004",  # magic values
+  "S101",     # assert
+  "TID252",   # relative imports
+  "S105",     # Ignore checks for possible passwords
+  "S106",
+  "S107",
+  "S108",     # Harcoded temp file
+]
+
+
+###################
+# pytest
+###################
+#[tool.pytest]  # in a future version of pytest
 [tool.pytest.ini_options]
 log_cli = true
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s (%(filename)s:%(lineno)s)"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+# :tyranno: "--cov ${project.name} --cov-report term-missing"
+addopts = "--cov suretime --cov-report term-missing"
+markers = [
+  "integration: marks integration tests (deselect with '-m \"not integration\"')",
+  "network: marks tests that require network access (deselect with '-m \"not network\"')"
+]
+doctest_optionflags = [
+  "DONT_ACCEPT_TRUE_FOR_1",
+  "NORMALIZE_WHITESPACE",
+]
 
-
-#########################################################################################
-# Style checking
-#########################################################################################
-
-[tool.coverage.paths]
-source = ["serviceit"]
+###################
+# coverage
+###################
 
 [tool.coverage.run]
-source = ["serviceit"]
+source = ["src"]
+
+[tool.coverage.paths]
+src = ["src/suretime"]
+tests = ["tests"]
 
 [tool.coverage.report]
 show_missing = true
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
 
+
+###################
+# Black
+###################
 [tool.black]
-line-length = 100
-target-version = ["py39"]
+# :tyranno: line-length = ${tool.ruff.line-length}
+line-length = 120
+
+
+###################
+# Commitizen
+###################
+[tool.commitizen]
+major_version_zero = true
+annotated_tag = true
+gpg_sign = true
+version_scheme = "semver"
+version_provider = "pep621"
+bump_message = "chore: bump version $current_version → $new_version"
+#pre_bump_hooks = [
+#  "tyranno sync"  # make the versions match
+#]
+name = "cz_conventional_commits"
+
+
+###################
+# Tyranno
+###################
+
+#===== Tyranno targets to sync =====#
+[tool.tyranno.targets]
+add-defaults = true
+add          = []
+exclude      = []
+
+#===== Tyranno sync from web =====#
+[tool.tyranno.web]
+uris = [
+  "https://github.com/dmyersturnbull/tyranno/blob/main/.gitignore",
+  "https://github.com/dmyersturnbull/tyranno/blob/main/.dockerignore",
+  "https://github.com/dmyersturnbull/tyranno/blob/main/.editorconfig",
+  "https://github.com/dmyersturnbull/tyranno/blob/main/.gitattributes",
+  "https://github.com/dmyersturnbull/tyranno/blob/main/.prettierignore",
+  "https://github.com/dmyersturnbull/tyranno/blob/main/.scrutinizer.yaml",
+  "https://github.com/dmyersturnbull/tyranno/blob/main/.pre-commit-config.yaml",
+  "https://github.com/dmyersturnbull/suretime/blob/main/.github/dependabot.yaml",
+  "https://github.com/dmyersturnbull/suretime/tree/main/.github/workflows/",
+  "https://github.com/dmyersturnbull/suretime/tree/main/.github/DISCUSSION_TEMPLATE/",
+  "https://github.com/dmyersturnbull/suretime/tree/main/.github/ISSUE_TEMPLATE/",
+  "https://github.com/dmyersturnbull/suretime/tree/main/.github/PULL_REQUEST_TEMPLATE/",
+]
+
+#===== Tyranno auto-add SPDX headers =====#
+[tool.tyranno.auto-sync.headers]
+text = "${.header}"
+add = ["**/*"]
+exclude = []
+
+#===== Tyranno 'clean' command =====#
+[tool.tyranno.trash]
+add-defaults   = true
+add            = []
+exclude        = []
+
+#===== Tyranno main data =====#
+[tool.tyranno.data]
+src-dir           = "src"
+vendor            = "dmyersturnbull"
+frag              = "${.vendor}/${project.name}"
+copyright         = "Copyright $2021–${~|year(now_utc())~}, Contributors to ${project.name}"
+header            = """
+SPDX-FileCopyrightText: ${.copyright}
+SPDX-PackageHomePage: ${project.urls.Homepage}
+SPDX-License-Identifier: Apache-2.0
+"""
+long_description  = """Timezone helper"""

@@ -1,19 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2021-2023, Contributors to Suretime
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/suretime
+# SPDX-License-Identifier: Apache-2.0
+
 """
 System utils for suretime.
-
-Copyright 2021 Douglas Myers-Turnbull
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-or implied. See the License for the specific language governing
-permissions and limitations under the License.
 
 Code that performs initialization for suretime.
 """
@@ -42,7 +32,7 @@ logger = logging.getLogger("suretime")
 
 
 class NtpContinents:
-    known: FrozenSet[str] = frozenset(
+    known: frozenset[str] = frozenset(
         {
             "antarctica",
             "asia",
@@ -50,15 +40,16 @@ class NtpContinents:
             "north-america",
             "oceana",
             "south-america",
-        }
+        },
     )
 
     @classmethod
     def of(cls, name: str) -> str:
         name = name.lower().replace(" ", "-").replace("_", "-")
         if name not in NtpContinents.known:
+            msg = f"Unknown NTP continent {name} (allowed: {','.join(NtpContinents.known)})"
             raise LookupError(
-                f"Unknown NTP continent {name} (allowed: {','.join(NtpContinents.known)})"
+                msg,
             )
         return name
 
@@ -66,17 +57,17 @@ class NtpContinents:
 @dataclass(frozen=True, order=True, repr=True)
 class SysTzInfo:
     zone_name: str
-    offset_mins: Optional[int]
+    offset_mins: int | None
 
 
 @dataclass(frozen=True, order=True, repr=True)
 class ClockInfo:
     adjustable: bool
-    implementation: Optional[str]
+    implementation: str | None
     monotonic: bool
-    resolution: Optional[float]
+    resolution: float | None
     is_ntp: bool
-    server: Optional[str]
+    server: str | None
     is_epoch: bool
 
     def copy(self, **kwargs) -> ClockInfo:
@@ -114,7 +105,7 @@ class NtpClockType(enum.Enum):
         return self._name_.replace("_", "-")
 
     @classmethod
-    def of(cls, clock: Union[str, NtpClockType]) -> NtpClockType:
+    def of(cls, clock: str | NtpClockType) -> NtpClockType:
         if isinstance(clock, NtpClockType):
             return clock
         return cls[clock.lower().strip().replace("-", "_").replace(" ", "_")]
@@ -123,8 +114,8 @@ class NtpClockType(enum.Enum):
 @dataclass(frozen=True, order=True, repr=True)
 class Clock:
     name: str
-    const: Optional[int]
-    info: Optional[ClockInfo]
+    const: int | None
+    info: ClockInfo | None
 
     @classmethod
     def empty(cls) -> Clock:
@@ -168,7 +159,7 @@ class TzUtils:
     def get_ntp_clock(
         cls,
         server: str = SuretimeGlobals.NTP_SERVER,
-        attribute: Union[str, NtpClockType] = NtpClockType.client_sent,
+        attribute: str | NtpClockType = NtpClockType.client_sent,
     ) -> ClockTime:
         attribute = NtpClockType.of(attribute).name
         data = cls.get_ntp_time(server=server)
@@ -218,11 +209,7 @@ class TzUtils:
             attr = f"CLOCK_{name.upper()}"
             if hasattr(time, attr):
                 clock = Clock.system(name, getattr(time, attr, name))
-                if (
-                    clock.info is not None
-                    and clock.info.monotonic
-                    and hasattr(time, "clock_gettime_ns")
-                ):
+                if clock.info is not None and clock.info.monotonic and hasattr(time, "clock_gettime_ns"):
                     return clock
         return Clock("monotonic_ns", None, None)  # guaranteed for Python 3.5+
 
@@ -243,14 +230,14 @@ class TzUtils:
             return "+" + str(mins)
 
     @classmethod
-    def get_sys_zone(cls) -> Optional[SysTzInfo]:
-        if platform.system() == "Windows" and platform.release() in {"NT", "10", "8", "7"}:
+    def get_sys_zone(cls) -> SysTzInfo | None:
+        if platform.system() == "Windows" and platform.release() in {"NT", "11", "10", "8", "7"}:
             return cls._get_windows_zone()
         else:
             return cls._get_nix_zone()
 
     @classmethod
-    def _get_nix_zone(cls) -> Optional[SysTzInfo]:
+    def _get_nix_zone(cls) -> SysTzInfo | None:
         path = Path("/") / "etc" / "timezone"
         from_path = None
         if path.exists():
@@ -260,8 +247,9 @@ class TzUtils:
                 pass
         from_env = os.environ.get("TZ")
         if from_env is not None and from_path is not None and from_env != from_path:
+            msg = f"Contradictory system timezones {from_path} from {path} and {from_env} from $TZ"
             raise ZoneMismatchError(
-                f"Contradictory system timezones {from_path} from {path} and {from_env} from $TZ"
+                msg,
             )
         if from_path is not None:
             return SysTzInfo(from_path, None)
@@ -270,7 +258,7 @@ class TzUtils:
         return None
 
     @classmethod
-    def _get_windows_zone(cls) -> Optional[SysTzInfo]:
+    def _get_windows_zone(cls) -> SysTzInfo | None:
         import winreg
 
         key_name = r"SYSTEM\CurrentControlSet\Control\TimeZoneInformation"

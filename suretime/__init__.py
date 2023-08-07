@@ -1,54 +1,71 @@
+# SPDX-FileCopyrightText: Copyright 2021-2023, Contributors to Suretime
+# SPDX-PackageHomePage: https://github.com/dmyersturnbull/suretime
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Suretime entry point for import.
 
 Use as:
 
-.. code-block::
+```python
+import suretime
 
-  import suretime
-  suretime.zone.first_local()  # ZoneInfo["America/Los_Angeles"]
-
-Copyright 2021 Douglas Myers-Turnbull
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-or implied. See the License for the specific language governing
-permissions and limitations under the License.
+suretime.zone.first_local()  # ZoneInfo["America/Los_Angeles"]
+```
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import metadata as __load
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import suretime._error as errors
+from suretime._clock import (
+    Clock,
+    ClockInfo,
+    ClockTime,
+    NtpClockType,
+    NtpContinents,
+    NtpTime,
+    SysTzInfo,
+)
 from suretime._global import SuretimeGlobals
 from suretime._mapping import TimezoneMaps
+from suretime._model import (
+    Duration,
+    InvalidIntervalError,
+    RepeatingDuration,
+    RepeatingInterval,
+    TaggedDatetime,
+    TaggedInterval,
+    Ymdhmsun,
+    ZonedDatetime,
+)
 from suretime._setup import UTC, logger
-from suretime._type import Errors as errors
-from suretime._type import Types as types
+from suretime._zone import ExactTimezone, GenericTimezone
+
+pkg = Path(__file__).parent.name
+metadata = None
+try:
+    metadata = __load(pkg)
+except PackageNotFoundError:  # pragma: no cover
+    logger.error(f"Could not load package metadata for {pkg}. Is it installed?")
+    __uri__ = None
+    __title__ = None
+    __summary__ = None
+    __version__ = None
+else:
+    __uri__ = metadata["home-page"]
+    __title__ = metadata["name"]
+    __summary__ = metadata["summary"]
+    __version__ = metadata["version"]
 
 cache = TimezoneMaps.cached()
 clock = cache.clocks
 zone = cache.zones
 tag = cache.tagged
 utc = UTC
-
-ZoneInfo = ZoneInfo
-GenericTimezone = types.GenericTimezone
-TaggedDatetime = types.TaggedDatetime
-TaggedInterval = types.TaggedInterval
-ExactTimezone = types.ExactTimezone
-ZonedDatetime = types.ZonedDatetime
-RepeatingDuration = types.RepeatingDuration
-RepeatingInterval = types.RepeatingInterval
-Duration = types.Duration
 
 
 def get_ntp_continent() -> str:
@@ -59,31 +76,8 @@ def set_ntp_continent(code: str) -> None:
     SuretimeGlobals.NTP_SERVER = code
 
 
-metadata = None
-try:
-    metadata = __load("suretime")
-    __status__ = "Development"
-    __copyright__ = "Copyright 2021"
-    __date__ = "2021-01-20"
-    __uri__ = metadata["home-page"]
-    __title__ = metadata["name"]
-    __summary__ = metadata["summary"]
-    __license__ = metadata["license"]
-    __version__ = metadata["version"]
-    __author__ = metadata["author"]
-    __maintainer__ = metadata["maintainer"]
-    __contact__ = metadata["maintainer"]
-except PackageNotFoundError:  # pragma: no cover
-    logger.error("Could not load package metadata for suretime. Is it installed?")
-
-
-if __name__ == "__main__":  # pragma: no cover
-    if metadata is not None:
-        print(f"suretime (v{metadata['version']})")
-    else:
-        print(f"Unknown project info for suretime")
-    my_zone = TimezoneMaps.non_cached()
-    print(my_zone.tagged.now_local_ntp(only=False))
+class SuretimeMeta:
+    version = __version__
 
 
 __all__ = [
@@ -95,7 +89,6 @@ __all__ = [
     "clock",
     "errors",
     "tag",
-    "types",
     "zone",
     "Duration",
     "RepeatingDuration",
@@ -103,4 +96,6 @@ __all__ = [
     "TaggedDatetime",
     "TaggedInterval",
     "ZonedDatetime",
+    "SuretimeGlobals",
+    "SuretimeMeta",
 ]

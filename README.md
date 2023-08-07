@@ -1,4 +1,4 @@
-# Suretime
+# suretime
 
 [![Version status](https://img.shields.io/pypi/status/suretime)](https://pypi.org/project/suretime)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -21,20 +21,23 @@ even if the timezone changes in the middle of a calculation.
 To get the local zone in IANA:
 
 ```python
-from suretime import Suretime, datetime
+import suretime
+from datetime import datetime
 
 datetime.now().tzname()  # "Pacific Standard Time"
-Suretime.zones.first_local()  # ZoneInfo[America/Los_Angeles])
+suretime.zone.first_local()  # ZoneInfo[America/Los_Angeles])
 ```
 
 To map a nonstandard zone from elsewhere:
 
 ```python
-from suretime import Suretime
+import suretime
 
-Suretime.zones.only("Europe/Tiraspol")  # ZoneInfo[Europe/Tiraspol]
-Suretime.zones.first("Central Pacific Standard Time")  # ZoneInfo[Pacific/Guadalcanal]
-Suretime.zones.first("Central Pacific Standard Time", territory="AQ")  # ZoneInfo[Antarctica/Casey]
+suretime.zone.only("Europe/Tiraspol")  # ZoneInfo[Europe/Tiraspol]
+suretime.zone.first("Central Pacific Standard Time")  # ZoneInfo[Pacific/Guadalcanal]
+suretime.zone.first(
+    "Central Pacific Standard Time", territory="AQ"
+)  # ZoneInfo[Antarctica/Casey]
 ```
 
 Note that there is no 1-1 mapping between Windows and IANA timezones,
@@ -42,7 +45,7 @@ so suretime can fail despite its name.
 
 ### "Tagged" datetimes and intervals
 
-Suretime also has models to represent timestamps and intervals as accurately as the system permits.
+suretime also has models to represent timestamps and intervals as accurately as the system permits.
 For example, a `TaggedInterval` contains the wall time, IANA zone, original (unmapped) timezone info
 from the system, monotonic (typically boottime) clock time, and the clock used.
 
@@ -51,22 +54,22 @@ the ground truth even if a timezone shift occurs between events – such as from
 or the user boarding a flight.
 
 ```python
-from suretime import Suretime
+import suretime
 
-tagged = Suretime.tagged.now()
+tagged = suretime.tag.now()
 tagged.to_utc  # TaggedDateTime[...]
 tagged.clock.name  # "boottime" on most systems
 tagged == tagged  # same point in time
 tagged.iso_with_zone  # "2021-01-20T22:24:13.219253-07:00 [America/Los_Angeles]"
 ```
 
-
 ### Comparison to [tzlocal](https://github.com/regebro/tzlocal)
 
 tzlocal is a bit different. It:
+
 - ... only handles your current system’s timezone
 - ... is highly OS-specific
-- ... requires many system calls, making it typically *much* slower
+- ... requires many system calls, making it typically _much_ slower
 - ... is compatible with Windows 2000, XP, and 7 and below
 - ... is compatible with Python 3.6, 3.7, and 3.8
 - ... very rarely, can access timezones on incorrectly configured POSIX systems
@@ -77,30 +80,33 @@ You can combine both packages, falling back to tzlocal if suretime fails.
 ### Full example
 
 ```python
-from suretime import Suretime, datetime
+from datetime import datetime
+import suretime
 
 # Get your local system, non-IANA timezone
 system_time = datetime.now().astimezone()
 system_timezone = system_time.tzname()  # e.g. Pacific Standard Time
 
 # Get an IANA timezone instead:
-Suretime.zones.only_local()  # ZoneInfo[America/Los_Angeles]
+suretime.zone.only_local()  # ZoneInfo[America/Los_Angeles]
 # Or for an arbitrary system timezone name:
-Suretime.zones.first(system_timezone)  # ZoneInfo[America/Los_Angeles]
+suretime.zone.first(system_timezone)  # ZoneInfo[America/Los_Angeles]
 # Of course, it maps IANA zones to themselves:
-Suretime.zones.only("America/Los_Angeles")  # ZoneInfo[America/Los_Angeles]
+suretime.zone.only("America/Los_Angeles")  # ZoneInfo[America/Los_Angeles]
 
 # Get all IANA timezones that could match a zone
 # The first uses the primary/null territory
 # The second uses the territory "AQ"
-Suretime.zones.all("Central Pacific Standard Time")  # {ZoneInfo[Pacific/Guadalcanal]}
-Suretime.zones.all("Central Pacific Standard Time", "AQ")  # {ZoneInfo[Antarctica/Casey]}
+suretime.zone.all("Central Pacific Standard Time")  # {ZoneInfo[Pacific/Guadalcanal]}
+suretime.zone.all("Central Pacific Standard Time", "AQ")  # {ZoneInfo[Antarctica/Casey]}
 
 # Get 1 matching IANA zone; "get" means optional
-Suretime.zones.first("Central Pacific Standard Time", "AQ")  # ZoneInfo[Pacific/Casey]
-Suretime.zones.first("nonexistent zone")  # None
-Suretime.zones.only("nonexistent zone")  # errors
-Suretime.zones.only("Central Pacific Standard Time", "any")  # fails (multiple possible IANA zones)
+suretime.zone.first("Central Pacific Standard Time", "AQ")  # ZoneInfo[Pacific/Casey]
+suretime.zone.first("nonexistent zone")  # None
+suretime.zone.only("nonexistent zone")  # errors
+suretime.zone.only(
+    "Central Pacific Standard Time", "any"
+)  # fails (multiple possible IANA zones)
 
 # Get a fully resolved "tagged datetime"
 # It contains:
@@ -108,14 +114,16 @@ Suretime.zones.only("Central Pacific Standard Time", "any")  # fails (multiple p
 # - The primary IANA ZoneInfo
 # - The original system timezone
 # - A system wall time (`time.monotonic_ns`)
-tagged = Suretime.tagged.now_local_sys()  # TaggedDatetime[ ... ]
+tagged = suretime.tag.now_local_sys()  # TaggedDatetime[ ... ]
 print(tagged.clock.name)  # e.g. "boottime"
 # or NTP:
-tagged = Suretime.tagged.now_local_ntp(server="north-america", kind="server-received")  # TaggedDatetime[ ... ]
+tagged = suretime.tag.now_local_ntp(
+    server="north-america", kind="server-received"
+)  # TaggedDatetime[ ... ]
 # or fully reliable but not keeping the local zone:
-tagged = Suretime.tagged.now_utc_ntp()  # TaggedDatetime[ ... ]
+tagged = suretime.tag.now_utc_ntp()  # TaggedDatetime[ ... ]
 # or NTP:
-tagged = Suretime.tagged.now_local_sys()  # TaggedDatetime[ ... ]
+tagged = suretime.tag.now_local_sys()  # TaggedDatetime[ ... ]
 print(tagged.clock.name)  # "ntp:..."
 print(tagged.clock.info.resolution)  # e.g. -7
 
@@ -124,18 +132,18 @@ print(tagged.iso_with_zone)  # <datetime> [zone]
 print(tagged.source.territory)  # "primary"
 
 # if you only need the real time:
-Suretime.clocks.sys()
+suretime.clock.sys()
 # or:
-Suretime.clocks.ntp()
+suretime.clock.ntp()
 # or for all of the NTP clock times:
-ntp_data = Suretime.clocks.ntp_raw()
+ntp_data = suretime.clock.ntp_raw()
 print(ntp_data.root_dispersion)
 print(ntp_data.server_sent, ntp_data.client_received)
 print(ntp_data.round_trip.total_seconds())
 
 # Adjust a tagged time to a new real time
-tagged = Suretime.tagged.now_utc_sys()  # TaggedDatetime[ ... ]
-sys_now = Suretime.clocks.sys()
+tagged = suretime.tag.now_utc_sys()  # TaggedDatetime[ ... ]
+sys_now = suretime.clock.sys()
 tagged.at(sys_now)
 # now the datetime is adjusted to where it should be at the new real time
 
@@ -146,10 +154,11 @@ print(tagged == system_time)  # True: They're the same point in time
 print(tagged.is_identical_to(tagged))  # True: They're exactly the same
 
 # Get a "tagged duration" with the start and end, and monotonic real time in nanoseconds
-then = Suretime.tagged.now()  # TaggedDatetime [ ... ]
-for i in list(range(10000)): i += 1  # Just waiting a little
-now = Suretime.tagged.now()  # TaggedInterval [ ... ]
-interval = Suretime.tagged.interval(then, now)  # TaggedInterval [ ... ]
+then = suretime.tag.now()  # TaggedDatetime [ ... ]
+for i in list(range(10000)):
+    i += 1  # Just waiting a little
+now = suretime.tag.now()  # TaggedInterval [ ... ]
+interval = suretime.tag.interval(then, now)  # TaggedInterval [ ... ]
 print(interval.real_delta)  # Actual time passed
 print(interval.wall_delta)  # Simple end - start
 print(interval.iso)  # start--end in ISO 8601 format
@@ -160,13 +169,12 @@ print(interval.duration.iso)  # e.g. P0Y3M5DT14H22M35.223051S
 import tzlocal
 
 
-def get_local() -> Suretime.Types.TaggedDatetime:
-  try:
-    return Suretime.tagged.now()
-  except Suretime.Errors.CannotMapTzError:
-    zone = tzlocal.get_localzone()
-    return Suretime.tagged.exact(datetime.now(zone))
-
+def get_local() -> suretime.Types.TaggedDatetime:
+    try:
+        return suretime.tag.now()
+    except suretime.Errors.CannotMapTzError:
+        zone = tzlocal.get_localzone()
+        return suretime.tag.exact(datetime.now(zone))
 ```
 
 ### 🍁 Contributing

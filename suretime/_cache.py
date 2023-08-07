@@ -23,27 +23,26 @@ from __future__ import annotations
 import abc
 import json
 import logging
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
-from typing import Dict, FrozenSet, Mapping, Optional, Sequence, Union
+from typing import Dict, FrozenSet, Optional, Union
 from urllib.request import urlopen
 from zoneinfo import ZoneInfo, available_timezones
 
 import defusedxml.ElementTree as Xml
 
-cldr_github_url = (
-    "https://raw.githubusercontent.com/unicode-org/cldr/master/common/supplemental/windowsZones.xml"
-)
-TzMapType = Mapping[str, Mapping[str, FrozenSet[ZoneInfo]]]
-TzDictType = Dict[str, Dict[str, FrozenSet[ZoneInfo]]]
+cldr_github_url = "https://raw.githubusercontent.com/unicode-org/cldr/master/common/supplemental/windowsZones.xml"
+TzMapType = Mapping[str, Mapping[str, frozenset[ZoneInfo]]]
+TzDictType = dict[str, dict[str, frozenset[ZoneInfo]]]
 
 logger = logging.getLogger("suretime")
 
 
 class TzMapCacheEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, FrozenSet):
+        if isinstance(obj, frozenset):
             return list(obj)
         if isinstance(obj, ZoneInfo):
             return str(obj)
@@ -53,7 +52,7 @@ class TzMapCacheEncoder(json.JSONEncoder):
 
 
 class TzMapCacheDecoder(json.JSONDecoder):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj):
@@ -78,9 +77,9 @@ class TimezoneMapBackend(metaclass=abc.ABCMeta):
 
 @dataclass(frozen=True, repr=True)
 class TimezoneMapFilesysCache(TimezoneMapBackend):
-    path: Optional[Path] = None
+    path: Path | None = None
     expiration_mins: int = 34560
-    source_xml: Union[Path, str] = cldr_github_url
+    source_xml: Path | str = cldr_github_url
 
     def get(self) -> TzMapType:
         read = self._read()
@@ -91,13 +90,13 @@ class TimezoneMapFilesysCache(TimezoneMapBackend):
     def download(self) -> None:
         self._save()
 
-    def _read(self) -> Optional[TzMapType]:
+    def _read(self) -> TzMapType | None:
         if self.path is None or not self.path.exists():
             logger.debug(f"Timezone map cache not found at {self.path}. Generating.")
             return None
         txt = self.path.read_text(encoding="utf8")
         read = TzMapCacheDecoder().decode(txt)
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         then = read["downloadTimestamp"]
         if (now - then).total_seconds() > self.expiration_mins * 60:
             logger.debug(f"Timezone map cache at {self.path} from {then} is expired. Regenerating.")
@@ -107,7 +106,7 @@ class TimezoneMapFilesysCache(TimezoneMapBackend):
 
     def _save(self) -> TzMapType:
         built = self._build()
-        saved = dict(downloadTimestamp=datetime.now(tz=timezone.utc), mapping=built)
+        saved = {"downloadTimestamp": datetime.now(tz=UTC), "mapping": built}
         encoded = TzMapCacheEncoder(ensure_ascii=False, allow_nan=False).encode(saved)
         if self.path is not None:
             self.path.write_text(encoded, encoding="utf8")
@@ -127,7 +126,7 @@ class TimezoneMapFilesysCache(TimezoneMapBackend):
             if node.tag == "mapZone":
                 win_zone = node.attrib["other"]
                 win_terr = node.attrib["territory"]
-                iana_zones = [ZoneInfo(iana) for iana in node.attrib["type"].split(" ")]
+                iana_zones = [ZoneInfo(iana) for iana in node.attrib["type"].split(" ") if iana]
                 if win_zone not in mp:
                     mp[win_zone]: Mapping[str, ZoneInfo] = {}
                 mp[win_zone][win_terr] = frozenset(iana_zones)
