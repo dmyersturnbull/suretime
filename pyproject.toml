@@ -6,7 +6,7 @@
 # build-system
 ###################
 [build-system]
-requires = ["hatchling~=1.7"]
+requires = ["hatchling~=1.29"]
 build-backend = "hatchling.build"
 
 
@@ -37,8 +37,8 @@ classifiers = [
   "Topic :: Software Development :: Build Tools",
 ]
 dependencies = [
-  "typer[all]         ~=0.9",
-  "defusedxml         >=0.7,<1.0",
+  "typer[all]         ~=0.24",
+  "defusedxml         >=0.7.1,<1.0",
   "ntplib             >=0.4, <1.0",
 ]
 
